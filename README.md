@@ -6,9 +6,9 @@ Forma parte del Proyecto Final de Carrera de **Gabriel Canavesio**, de Ingenier�
 
 ## Estado del proyecto
 
-El repositorio se encuentra en etapa de preparación para la implementación. Actualmente contiene las indicaciones de trabajo y la configuración del acceso al código de referencia.
+El diseño de Station, plataforma e integración está aprobado y consolidado. El repositorio está preparado para comenzar el desarrollo y todavía no contiene componentes ejecutables ni pruebas del PFC.
 
-La arquitectura, las tecnologías y el contrato de integración están definidos en la documentación del proyecto. Las funcionalidades descritas a continuación corresponden al alcance previsto; su implementación y validación se incorporarán progresivamente.
+El desarrollo será incremental y orientado al prototipado: primero un flujo funcional completo y acotado, desde la recepción hasta la consulta de datos; luego, ampliaciones y ajustes a partir de pruebas y revisión. Las capacidades descritas a continuación corresponden al diseño previsto.
 
 ## Propósito y alcance
 
@@ -25,7 +25,7 @@ El alcance de la plataforma comprende:
 
 La información presentada debe permitir distinguir el estado operativo de la máquina, la vigencia de los datos y la situación de comunicación.
 
-El proyecto construye una base de información para futuras capacidades de mantenimiento predictivo y análisis de mejora del producto. El prototipo actual se concentra en monitoreo basado en condición y diagnóstico.
+El mantenimiento predictivo avanzado y la analítica de mejora del producto son evoluciones futuras, apoyadas en la información y los históricos que conserve la plataforma.
 
 ## Arquitectura
 
@@ -33,7 +33,7 @@ La solución completa distribuye responsabilidades entre la máquina, la Station
 
 **Máquina → adquisición y procesamiento en Station → comunicación HTTPS/JSON → plataforma central → consulta web y notificaciones.**
 
-La **Station** adquiere señales, ejecuta las funciones de monitoreo F1–F7, genera registros y conserva información pendiente de envío durante períodos sin conectividad. También proporciona la interfaz local de operación.
+La **Station** adquiere señales, ejecuta las funciones de monitoreo F1–F7 y conserva registros para su sincronización. Su HMI permite consultar información actual y alertas de máquina, con avisos de salud de Station separados, aun sin conexión exterior.
 
 La **plataforma central** recibe los registros, conserva históricos y ofrece consulta remota, administración, gestión de parámetros y notificaciones.
 
@@ -47,13 +47,14 @@ El backend se organiza en tres servicios:
 
 Spring Cloud Gateway concentra el acceso a las API. RabbitMQ permite desacoplar el procesamiento interno de transiciones de alerta y sus notificaciones.
 
-Cada servicio administra sus propios datos. La integración con la Station conserva la identidad, el origen y el momento de ocurrencia de los registros, y contempla retransmisiones y confirmaciones de persistencia.
+Cada servicio administra sus propios datos. La integración conserva identidad y fecha de ocurrencia de los registros, con confirmación durable, procesamiento posterior recuperable y retransmisiones sin duplicados.
 
 ### Tecnologías definidas
 
 | Componente | Tecnologías |
 |---|---|
-| Interfaz web | React, TypeScript, Vite y Tailwind CSS |
+| Aplicación local de Station y emulador | Java 21, Spring Boot y SQLite |
+| Interfaz web y HMI local | React, TypeScript, Vite y Tailwind CSS |
 | Servicios backend | Java 21 y Spring Boot |
 | Entrada a las API | Spring Cloud Gateway |
 | Persistencia de Gestión y Alertas | PostgreSQL |
@@ -64,9 +65,11 @@ Cada servicio administra sus propios datos. La integración con la Station conse
 
 ### Simulación e integración
 
-El prototipo contempla un auxiliar externo que genera señales y emula el comportamiento de la Station. Este utiliza el mismo contrato de integración que una Station real y mantiene identificado el origen simulado de los datos.
+El prototipo contempla un auxiliar externo con generador de señales, emulador, panel de pruebas y HMI. Comparte con el controlador previsto el núcleo Java independiente del hardware y los servicios de configuración, persistencia, recuperación y sincronización; los escenarios sustituyen los adaptadores físicos de adquisición.
 
-Las pruebas con simulación permiten evaluar el comportamiento de la plataforma y el intercambio de información. La validación física de sensores, adquisición e instalación en la máquina requiere pruebas específicas.
+El auxiliar se ejecuta en un proyecto Docker Compose separado, con redes y persistencia propias. Se integra mediante el mismo contrato HTTPS/JSON que una Station, sin acceder directamente a las bases ni al broker central.
+
+La validación comprende software e integración con escenarios controlados. La instalación física, la implementación del controlador real y las comprobaciones sobre la máquina quedan fuera del alcance del PFC.
 
 ## Usuarios de la plataforma
 
@@ -99,15 +102,18 @@ La preparación se realiza una vez por copia del proyecto. Si esa carpeta ya con
 
 El directorio `referencias/agrotrack/` está excluido mediante `.gitignore`. AgroTrack conserva su propio historial y remoto; su código no se incorpora automáticamente a los commits de esta plataforma. Las actualizaciones de ese clon se realizan explícitamente desde su propio repositorio.
 
-Las instrucciones para ejecutar y probar la plataforma se agregarán junto con sus componentes ejecutables.
+Las instrucciones de ejecución y pruebas se incorporarán junto con los componentes ejecutables.
 
 ## Documentación del proyecto
 
 Google Drive mantiene las fuentes canónicas del alcance, los requisitos, el diseño y las decisiones del PFC:
 
 - [Contexto operativo y decisiones del proyecto](https://docs.google.com/document/d/1lcZKgqRuqjYk7nvfggFXdzPMhiSFWBaJg3ZnRPmm7cU/edit).
+- [Arquitectura e integración general de la solución](https://docs.google.com/document/d/1aTbEzNzzg2C7kjmObtCbfCMOBruVAE3LSYc3TcsdqRs/edit).
+- [Diseño detallado de Station](https://docs.google.com/document/d/1OQUfzkxnx2ZCBM5eBbHi2rJcabcJF7navQFB8yY4QzY/edit).
 - [Diseño detallado de la plataforma de monitoreo](https://docs.google.com/document/d/19Twh3hXmds-d8IhhxrvqQUpINPeg9pSi3yKotonV4Go/edit).
 - [Contrato de integración Station–plataforma](https://docs.google.com/document/d/1gE5UOsgvys2ZfEnKznHS53ZYaSF5zNEU-Wut-d-YLYA/edit).
+- [Escenarios de validación del prototipo](https://docs.google.com/document/d/10MyDRSAXaBPo9lOtr39y4P6I29kgWWlSlyNNiDZDMLY/edit).
 - [Carpeta de desarrollo del Proyecto Final](https://drive.google.com/drive/folders/11P4yMDp7t1O01jwOhaYpOyxkqQZbYotu).
 
-El repositorio conserva la implementación y su documentación técnica de ejecución y pruebas. Las indicaciones para trabajar en él se encuentran en `AGENTS.md`.
+El contexto operativo contiene el índice completo de fuentes y el estado del proyecto. El repositorio alojará la implementación y su documentación de ejecución y pruebas. Las indicaciones de trabajo se encuentran en [AGENTS.md](AGENTS.md).

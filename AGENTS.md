@@ -2,8 +2,9 @@
 
 ## Propósito y alcance
 
-Este repositorio implementa la plataforma de monitoreo del Proyecto Final de Carrera
-de Ingeniería en Sistemas de Información de UTN FRSF (Argentina).
+Este repositorio está destinado a implementar la plataforma de monitoreo del
+Proyecto Final de Carrera de Ingeniería en Sistemas de Información de UTN FRSF
+(Argentina).
 
 La plataforma forma parte de una solución integral: máquina → adquisición → Station
 (procesamiento edge) → comunicación → backend/ingesta → persistencia → servicios/API
@@ -24,6 +25,7 @@ El repositorio permite comprobar lo efectivamente implementado y sus verificacio
 Fuentes de entrada:
 
 - [PFC - Contexto operativo y decisiones del proyecto](https://docs.google.com/document/d/1lcZKgqRuqjYk7nvfggFXdzPMhiSFWBaJg3ZnRPmm7cU/edit): estado vigente, decisiones, pendientes e índice de fuentes canónicas.
+- [Diseño detallado de Station](https://docs.google.com/document/d/1OQUfzkxnx2ZCBM5eBbHi2rJcabcJF7navQFB8yY4QzY/edit): arquitectura local, adquisición, persistencia, sincronización y HMI.
 - [Diseño detallado de la plataforma de monitoreo - Embolsadora](https://docs.google.com/document/d/19Twh3hXmds-d8IhhxrvqQUpINPeg9pSi3yKotonV4Go/edit): arquitectura, tecnologías y comportamiento acordado de la plataforma.
 - [Contrato de integración Station-plataforma - Embolsadora](https://docs.google.com/document/d/1gE5UOsgvys2ZfEnKznHS53ZYaSF5zNEU-Wut-d-YLYA/edit): mensajes, confirmaciones, parámetros y reglas de intercambio.
 - [Desarrollo Proyecto Final](https://drive.google.com/drive/folders/11P4yMDp7t1O01jwOhaYpOyxkqQZbYotu): carpeta raíz de documentación y trabajo del PFC.
@@ -33,7 +35,9 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
 1. Consulta primero el contexto operativo y sus decisiones vigentes.
 2. Lee únicamente las fuentes canónicas pertinentes al cambio; el contexto gobierna
    el estado transversal y cada fuente específica gobierna el detalle de su tema.
-3. Revisa la implementación y las verificaciones existentes antes de modificarla.
+   Incluye las pestañas pertinentes y usa el índice del contexto para otras fuentes.
+3. Revisa `git status`, el contenido local y las verificaciones existentes antes de
+   modificar archivos. Conserva los cambios del usuario.
 
 - Los ajustes locales sin impacto funcional no requieren releer Drive.
 - Si el código difiere de lo acordado, explicita la discrepancia y evalúa su impacto.
@@ -58,11 +62,18 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
 
 ## Implementación y validación
 
-- Trabaja incrementalmente: reutiliza lo pertinente y evita duplicar análisis cerrados.
+- Desarrolla incrementalmente y con orientación al prototipado: primero un flujo
+  funcional completo y acotado, luego ampliaciones y ajustes por pruebas y revisión.
+  Reutiliza lo pertinente y evita duplicar análisis cerrados.
 - Respeta los requisitos, contratos y tecnologías aprobados. Consulta sus fuentes
   antes de proponer sustituciones o nuevas decisiones tecnológicas.
-- Mantén explícita la separación entre arquitectura objetivo, simulación del prototipo
-  y datos reales. Una prueba con datos simulados no acredita validación en máquina.
+- Usa el mismo modelo, contrato y reglas de autorización para Station y emulador.
+  Documenta escenarios y adaptadores en las pruebas, sin añadir banderas de origen
+  físico o emulado a los datos o credenciales.
+- Distingue arquitectura objetivo, entorno de pruebas y evidencia de implementación.
+  Una prueba con escenarios no acredita validación en máquina.
+- La instalación física, implementación del controlador real y comprobaciones físicas
+  están fuera del alcance del PFC. La parametrización real se incorporará si es posible.
 - Ante valores técnicos faltantes, prefiere parámetros simbólicos o configurables;
   si no hace falta cuantificar, expresa la condición sin fijar un valor.
 - Usa valores supuestos solo cuando un ejemplo o simulación lo requiera, marcándolos
@@ -95,6 +106,8 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
   dentro de la carpeta correspondiente y respetando la estructura existente.
 - Este archivo contiene reglas estables y referencias. El estado del proyecto,
   los pendientes y el inventario completo de fuentes permanecen en el contexto operativo.
+- Mantén el README como entrada al repositorio y AGENTS.md como guía de trabajo.
+  Evita duplicar diseños, estado de entregas académicas o bitácoras del contexto operativo.
 - Al cerrar un bloque que produzca decisiones materiales, resuelva pendientes
   o cambie alcance, requisitos, arquitectura, modelo de información o estado del PFC,
   prepara la actualización del contexto operativo con un resumen vigente y referencias
