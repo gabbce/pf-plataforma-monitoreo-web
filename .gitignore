@@ -1,2 +1,12 @@
 # Clon independiente de AgroTrack utilizado como referencia de implementación.
 /referencias/agrotrack/
+
+# Salidas de herramientas y configuración local.
+**/target/
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/
+.runtime/
+.env
+*.log

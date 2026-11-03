@@ -85,6 +85,60 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
   Al finalizar, informa qué cambió, cómo se verificó y qué limitaciones permanecen;
   no afirmes que una prueba se ejecutó si no hay evidencia de su ejecución.
 
+- Conserva el contexto histórico mediante las relaciones del modelo vigente.
+  Resuelve la fuente aplicable según el instante de ocurrencia, también en registros
+  tardíos, y conserva la referencia a la configuración realmente aplicada cuando
+  corresponda. Los cambios de contexto no deben reinterpretar silenciosamente
+  los originales.
+
+## Organización del desarrollo y seguimiento
+
+- Organiza el desarrollo en [GitHub Projects](https://github.com/users/gabbce/projects/1)
+  y las [issues del repositorio](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues),
+  con la cuenta personal `gabbce`. Conserva en Drive las definiciones canónicas y
+  en el repositorio el código, las instrucciones y las evidencias técnicas.
+- Antes de implementar, identifica el incremento, la card y el paso correspondiente.
+  Revisa el plan, las dependencias y los criterios de aceptación; prepara y refina
+  ese trabajo antes de escribir código. Una solicitud de cambio no sustituye esta
+  preparación. Ajusta la granularidad al resultado, sin crear una issue por archivo.
+- Usa un milestone por incremento demostrable, sin fijar una cantidad de prototipos
+  ni fechas sin fundamento. Incluye en él las cards padre; las subissues se siguen
+  dentro de cada card para evitar duplicar el conteo de avance.
+- La card padre concentra descripción, objetivos, alcance, exclusiones, dependencias,
+  referencias pertinentes y criterios de aceptación observables. Sus subissues son
+  pasos verificables, con checklist y evidencia de cierre; heredan el contexto del
+  padre y no repiten su especificación.
+- Refina progresivamente: detalla las cards próximas a ejecución y conserva alcance
+  y dependencias de las posteriores. Completa sus pasos antes de abordarlas, sin
+  anticipar decisiones de implementación que todavía no hacen falta.
+- Usa los estados Backlog → Lista para desarrollar → En curso → En revisión → Hecha.
+  Registra bloqueos mediante dependencias. Una tarea está lista cuando sus entradas,
+  pasos próximos y aceptación son claros y sus dependencias están satisfechas.
+  Mantén como máximo una subissue de implementación en curso.
+- En componentes nuevos, utiliza los generadores oficiales pertinentes del stack,
+  como Spring Initializr y Vite; verifica y registra las versiones y dependencias.
+  Coordina la base de código y la infraestructura Docker desde la inicialización.
+  Los esqueletos arrancables son preparación técnica, no funcionalidad validada.
+- Actualiza el seguimiento al iniciar un paso, detectar un bloqueo y cerrar trabajo.
+  Enlaza cambios revisables y verificaciones realmente ejecutadas, con sus resultados
+  y limitaciones. No sustituyas el tablero con bitácoras de avance duplicadas.
+- Cierra una subissue cuando su resultado esté comprobado. Cierra una card solo tras
+  resolver sus pasos, verificar la aceptación integrada y revisar los cambios.
+  Un checklist completo, un commit o un build exitoso no acreditan por sí solos
+  el comportamiento funcional ni la cobertura completa de RF, RNF o EV/PT.
+- Al cerrar un incremento, revisa el resultado con el responsable, registra las
+  observaciones con comportamiento esperado/observado, reproducción e impacto,
+  y prioriza el incremento siguiente a partir de esa evidencia. Prepara los cambios
+  documentales materiales y aplica la autorización de Drive indicada más abajo.
+- El método completo se conserva en el [Plan de trabajo de diseño detallado y desarrollo](https://docs.google.com/document/d/1T6OcTK27DG3hy_uPu2W3E74zdhrwLITGQk2c_oEcMM4/edit);
+  el README mantiene la entrada al seguimiento y este archivo sus reglas estables.
+
+- Conserva la definición, aceptación, cobertura acotada y revisión de los incrementos
+  en el [Registro de incrementos de desarrollo y validación — Plataforma y auxiliar Station](https://docs.google.com/document/d/1HEcfnedONjGtWyyDrDRskmFqxkQ3vq_fDSl03aKEdiA/edit).
+  Los documentos generales mantienen el sistema objetivo; GitHub conserva el avance
+  operativo. El Cronograma ajustado permanece congelado y no se actualiza con el
+  avance de las cards.
+
 ## Idioma
 
 - Escribe los mensajes de commit y la documentación en español, incluidos los nombres

@@ -6,9 +6,9 @@ Forma parte del Proyecto Final de Carrera de **Gabriel Canavesio**, de Ingenier�
 
 ## Estado del proyecto
 
-El diseño de Station, plataforma e integración está aprobado y consolidado. El repositorio está preparado para comenzar el desarrollo y todavía no contiene componentes ejecutables ni pruebas del PFC.
+El diseño de Station, plataforma e integración está aprobado y consolidado. La implementación se organiza en incrementos funcionales cuyo estado y evidencias se consultan en el seguimiento de GitHub.
 
-El desarrollo será incremental y orientado al prototipado: primero un flujo funcional completo y acotado, desde la recepción hasta la consulta de datos; luego, ampliaciones y ajustes a partir de pruebas y revisión. Las capacidades descritas a continuación corresponden al diseño previsto.
+El desarrollo es incremental y orientado al prototipado: primero un flujo funcional completo y acotado, desde la recepción hasta la consulta de datos; luego, ampliaciones y ajustes a partir de pruebas y revisión. Las capacidades descritas a continuación corresponden al diseño previsto; su implementación y validación se acreditan mediante los resultados de cada incremento.
 
 ## Propósito y alcance
 
@@ -79,6 +79,31 @@ La validación comprende software e integración con escenarios controlados. La 
 
 El Operador interactúa con la interfaz local de la Station y no posee acceso web por ese rol.
 
+## Organización del desarrollo
+
+El trabajo se gestiona en el [Project del PFC](https://github.com/users/gabbce/projects/1)
+y en las [issues del repositorio](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues).
+El [milestone del Prototipo 1](https://github.com/gabbce/pf-plataforma-monitoreo-web/milestone/1)
+reúne sus cards padre.
+
+Cada card concentra objetivo, alcance, referencias, dependencias y aceptación.
+Las subissues funcionan como pasos verificables de seguimiento. Se detallan primero
+las tareas próximas a ejecución y se refinan las restantes al aproximarse a ellas.
+
+El flujo es **Backlog → Lista para desarrollar → En curso → En revisión → Hecha**.
+El cierre requiere evidencia y revisión del resultado; el avance del milestone cuenta
+las cards padre, sin duplicar sus subissues. La inicialización coordina las herramientas
+del stack y la infraestructura Docker antes de desarrollar el recorrido funcional.
+
+El [Registro de incrementos de desarrollo y validación — Plataforma y auxiliar Station](https://docs.google.com/document/d/1HEcfnedONjGtWyyDrDRskmFqxkQ3vq_fDSl03aKEdiA/edit)
+conserva el objetivo, alcance, aceptación, cobertura y revisión de cada incremento.
+Los documentos generales describen el sistema objetivo y GitHub mantiene el avance operativo.
+
+Las reglas de trabajo están en [AGENTS.md](AGENTS.md) y el método completo en el
+[Plan de trabajo de diseño detallado y desarrollo](https://docs.google.com/document/d/1T6OcTK27DG3hy_uPu2W3E74zdhrwLITGQk2c_oEcMM4/edit).
+El tablero conserva el estado operativo; Drive mantiene las decisiones transversales
+y el repositorio las instrucciones y evidencias ligadas al código.
+
 ## Preparación del repositorio
 
 Para obtener este proyecto mediante SSH:
@@ -114,6 +139,7 @@ Google Drive mantiene las fuentes canónicas del alcance, los requisitos, el dis
 - [Diseño detallado de la plataforma de monitoreo](https://docs.google.com/document/d/19Twh3hXmds-d8IhhxrvqQUpINPeg9pSi3yKotonV4Go/edit).
 - [Contrato de integración Station–plataforma](https://docs.google.com/document/d/1gE5UOsgvys2ZfEnKznHS53ZYaSF5zNEU-Wut-d-YLYA/edit).
 - [Escenarios de validación del prototipo](https://docs.google.com/document/d/10MyDRSAXaBPo9lOtr39y4P6I29kgWWlSlyNNiDZDMLY/edit).
+- [Registro de incrementos de desarrollo y validación — Plataforma y auxiliar Station](https://docs.google.com/document/d/1HEcfnedONjGtWyyDrDRskmFqxkQ3vq_fDSl03aKEdiA/edit).
 - [Carpeta de desarrollo del Proyecto Final](https://drive.google.com/drive/folders/11P4yMDp7t1O01jwOhaYpOyxkqQZbYotu).
 
 El contexto operativo contiene el índice completo de fuentes y el estado del proyecto. El repositorio alojará la implementación y su documentación de ejecución y pruebas. Las indicaciones de trabajo se encuentran en [AGENTS.md](AGENTS.md).
