@@ -129,6 +129,15 @@ El directorio `referencias/agrotrack/` está excluido mediante `.gitignore`. Agr
 
 Las instrucciones de ejecución y pruebas se incorporarán junto con los componentes ejecutables.
 
+## Interfaces y seguimiento del P1
+
+- [Referencia de interfaces y criterios de interacción](docs/diseno/interfaces-p1.md).
+- [Prototipo editable en Figma](https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH) y [guía de recorrido](https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH?node-id=13-3779).
+- [Revisión del prototipo y limitaciones](docs/diseno/revision-p1/revision.md).
+- [Tablero de desarrollo](https://github.com/users/gabbce/projects/1) y [milestone P1](https://github.com/gabbce/pf-plataforma-monitoreo-web/milestone/1).
+
+Las interfaces son una referencia de implementación; no acreditan software funcional. Los recursos de marca se conservan en [brand/](brand/). Las tareas correspondientes se enlazan desde la ficha de interfaces.
+
 ## Documentación del proyecto
 
 Google Drive mantiene las fuentes canónicas del alcance, los requisitos, el diseño y las decisiones del PFC:

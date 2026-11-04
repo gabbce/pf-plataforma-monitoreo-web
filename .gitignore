@@ -10,3 +10,6 @@
 .runtime/
 .env
 *.log
+
+# Metadatos de procedencia de Windows; no forman parte de los recursos.
+*Zone.Identifier

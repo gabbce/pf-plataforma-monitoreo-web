@@ -1,0 +1,130 @@
+{
+  "fecha": "2026-11-04",
+  "tipo": "Revisión visual y estructural del prototipo",
+  "archivo_figma": "https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH",
+  "capturas": [
+    {
+      "archivo": "01-acceso.png",
+      "nodo": "8:181",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "02-maquinas.png",
+      "nodo": "8:241",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "03-detalle.png",
+      "nodo": "8:302",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "04-historico.png",
+      "nodo": "8:491",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "05-detalle-movil.png",
+      "nodo": "10:1282",
+      "ancho": 360,
+      "alto": 844
+    },
+    {
+      "archivo": "06-historico-movil.png",
+      "nodo": "10:1461",
+      "ancho": 360,
+      "alto": 844
+    },
+    {
+      "archivo": "07-dato-invalido.png",
+      "nodo": "11:2416",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "08-dato-desactualizado.png",
+      "nodo": "11:2566",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "09-detalle-tablet.png",
+      "nodo": "10:519",
+      "ancho": 768,
+      "alto": 1024
+    },
+    {
+      "archivo": "10-historico-tablet.png",
+      "nodo": "10:704",
+      "ancho": 768,
+      "alto": 1024
+    }
+  ],
+  "hallazgos": [
+    {
+      "prioridad": "Media",
+      "titulo": "El histórico pierde el estado inválido del registro",
+      "ubicacion": "Estado · Detalle · Dato inválido → Histórico de RPM, 04/11/2026 09:09",
+      "nodos": [
+        "11:2416",
+        "11:2449",
+        "8:491",
+        "I8:724;8:722"
+      ],
+      "hecho": "El resumen muestra RPM inválidas a las 09:09. Su acción de histórico conduce al histórico normal, cuyo registro de las 09:09 tiene valor 1.800 y calidad Válida.",
+      "impacto": "El mismo instante parece cambiar de calidad al navegar; el prototipo no permite revisar la interpretación histórica del dato inválido.",
+      "recomendacion": "Mantener el escenario de calidad al abrir el histórico y el detalle del registro, usando datos y huecos coherentes."
+    },
+    {
+      "prioridad": "Media",
+      "titulo": "El acceso al registro en móvil tiene un área táctil pequeña",
+      "ubicacion": "Histórico móvil · columna Detalle",
+      "nodos": [
+        "10:1461",
+        "I10:1562;10:1560"
+      ],
+      "hecho": "La instancia Ver mide 22 × 19 px. La fila de 328 × 44 px y sus contenedores no tienen reacción.",
+      "impacto": "Riesgo de selección imprecisa con el dedo para una acción necesaria de consulta.",
+      "recomendacion": "Ampliar el área interactiva con espaciado o hacer seleccionable toda la fila."
+    },
+    {
+      "prioridad": "Baja",
+      "titulo": "La consulta de puntos solo está representada en el último",
+      "ubicacion": "Detalle · gráficos de RPM y temperatura",
+      "nodos": [
+        "8:302",
+        "8:414",
+        "8:466"
+      ],
+      "hecho": "Cada gráfico tiene diez puntos. Solo el último tiene ON_CLICK y ON_HOVER; los nueve anteriores no tienen reacciones. El punto interactivo mide 6 × 6 px.",
+      "impacto": "No se puede revisar valor y fecha de las mediciones intermedias como establece la ficha.",
+      "recomendacion": "Conectar todos los puntos con su muestra y ampliar el área de interacción, especialmente en móvil."
+    },
+    {
+      "prioridad": "Baja",
+      "titulo": "El cambio de variable se aplica antes de Consultar",
+      "ubicacion": "Histórico · selector de variable y botón Consultar",
+      "nodos": [
+        "13:3533",
+        "13:3541",
+        "8:730",
+        "15:3593"
+      ],
+      "hecho": "Elegir temperatura navega directamente al histórico de temperatura con gráfico y tabla ya cambiados. Consultar solo abre el aviso temporal de consulta.",
+      "impacto": "La secuencia representada combina aplicación inmediata del filtro con una acción explícita que parece necesaria.",
+      "recomendacion": "Representar filtros pendientes y aplicar los resultados al pulsar Consultar, conservando la interacción aprobada."
+    }
+  ],
+  "limites": [
+    "El control del navegador falló dos veces al inicializarse; no se ejecutaron clics en el reproductor.",
+    "La navegación se evaluó mediante reacciones y destinos del archivo.",
+    "Los campos sin entrada libre son una limitación declarada del prototipo, no un hallazgo nuevo.",
+    "La captura aislada del histórico móvil quedó recortada por el marco padre y se descartó; se conserva la captura de la ventana visible y la evidencia de capas.",
+    "No se verificaron teclado, foco ni lector de pantalla."
+  ],
+  "diseno_modificado": false
+}

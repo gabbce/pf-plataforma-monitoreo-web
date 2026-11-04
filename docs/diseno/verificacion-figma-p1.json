@@ -1,0 +1,52 @@
+{
+  "fecha": "2026-11-04",
+  "archivo_figma": "https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH",
+  "guia_figma": "https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH?node-id=13-3779",
+  "metodo": "Lectura de capas y reacciones mediante Figma MCP; inspección visual de capturas del lienzo.",
+  "vistas_principales": [
+    "Acceso",
+    "Máquinas autorizadas",
+    "Detalle de máquina",
+    "Histórico"
+  ],
+  "anchos": [
+    1366,
+    768,
+    360
+  ],
+  "marcos_con_variantes": 44,
+  "vistas_principales_por_ancho": 12,
+  "componentes_locales": 140,
+  "capas_de_texto": 1727,
+  "instancias_en_vistas": 833,
+  "imagenes_rasterizadas_en_vistas": 0,
+  "familias_tipograficas": [
+    "Inter"
+  ],
+  "navegacion": {
+    "nodos_con_reacciones": 565,
+    "registros_comprobados": 180,
+    "comprobaciones_conservacion_seleccion": 52,
+    "inicios_recorrido": 4,
+    "incidencias": []
+  },
+  "comprobaciones_visuales": [
+    "Acceso, máquinas, detalle e histórico de escritorio.",
+    "Acceso, máquinas y contenido desplazable completo de detalle e histórico móvil.",
+    "Detalle e histórico de tablet.",
+    "Datos inválidos, desactualizados y validación de fechas.",
+    "Panel de detalle en escritorio y móvil, selector de período y guía de revisión."
+  ],
+  "contraste": {
+    "logo_y_graficos": "#ED1C24",
+    "acciones": "#D71920",
+    "relacion_acciones_blanco": 5.19
+  },
+  "limites": [
+    "Datos fijos de escenario; no se ejecutan API, autenticación ni consultas reales.",
+    "Usuario, contraseña y fechas se representan sin entrada libre de texto en el prototipo.",
+    "Los enlaces se comprobaron estructuralmente; no se automatizó una ejecución de clics en el reproductor.",
+    "Pendiente de revisión del responsable.",
+    "Sin detección de sesiones ni validación física."
+  ]
+}
