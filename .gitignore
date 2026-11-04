@@ -1,2 +1,5 @@
 # Clon independiente de AgroTrack utilizado como referencia de implementación.
 /referencias/agrotrack/
+
+# Metadatos de procedencia de Windows; no forman parte de los recursos.
+*Zone.Identifier

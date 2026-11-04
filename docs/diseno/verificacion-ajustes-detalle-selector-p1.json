@@ -1,0 +1,205 @@
+{
+  "fecha": "2026-11-04",
+  "archivo_figma": "https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH",
+  "alcance": "Formato del panel de detalle de lectura y selector de período anclado en escritorio y tablet.",
+  "cambios": {
+    "detalle": [
+      "Cabecera y cierre con jerarquía consistente.",
+      "Variable y chasis identificados.",
+      "Valor y unidad próximos, con calidad agrupada.",
+      "Fechas y antigüedad alineadas en filas."
+    ],
+    "selector": [
+      "Campo con indicador desplegable.",
+      "Lista anclada debajo del campo y de igual ancho.",
+      "Opción seleccionada resaltada.",
+      "Cierre al hacer clic fuera, sin oscurecer el fondo."
+    ]
+  },
+  "verificacion": {
+    "dropdowns": [
+      {
+        "screenId": "8:302",
+        "selectorId": "8:380",
+        "anchor": {
+          "x": 317,
+          "y": 569,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "10:519",
+        "selectorId": "10:593",
+        "anchor": {
+          "x": 297,
+          "y": 549,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:1197",
+        "selectorId": "11:1257",
+        "anchor": {
+          "x": 317,
+          "y": 569,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:1368",
+        "selectorId": "11:1426",
+        "anchor": {
+          "x": 317,
+          "y": 569,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:1537",
+        "selectorId": "11:1595",
+        "anchor": {
+          "x": 297,
+          "y": 549,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:1706",
+        "selectorId": "11:1764",
+        "anchor": {
+          "x": 297,
+          "y": 549,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:2271",
+        "selectorId": "11:2345",
+        "anchor": {
+          "x": 317,
+          "y": 569,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:2416",
+        "selectorId": "11:2486",
+        "anchor": {
+          "x": 317,
+          "y": 621,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      },
+      {
+        "screenId": "11:2566",
+        "selectorId": "11:2648",
+        "anchor": {
+          "x": 317,
+          "y": 621,
+          "width": 216,
+          "height": 140
+        },
+        "periods": 3
+      }
+    ],
+    "panelBindings": [
+      {
+        "id": "13:3480",
+        "bindings": 7,
+        "contentBottom": 569
+      },
+      {
+        "id": "13:3581",
+        "bindings": 7,
+        "contentBottom": 569
+      },
+      {
+        "id": "13:3678",
+        "bindings": 7,
+        "contentBottom": 561
+      }
+    ],
+    "periodDestinationChecks": 27,
+    "allDestinationChecks": 618,
+    "mobileSelectorUnchanged": true,
+    "issues": []
+  },
+  "destinos_desplegables": [
+    {
+      "pantalla": "8:302",
+      "selector": "8:380",
+      "lista": "42:3767",
+      "periodo": 10
+    },
+    {
+      "pantalla": "10:519",
+      "selector": "10:593",
+      "lista": "42:3808",
+      "periodo": 10
+    },
+    {
+      "pantalla": "11:1197",
+      "selector": "11:1257",
+      "lista": "42:3877",
+      "periodo": 60
+    },
+    {
+      "pantalla": "11:1368",
+      "selector": "11:1426",
+      "lista": "42:3946",
+      "periodo": 1440
+    },
+    {
+      "pantalla": "11:1537",
+      "selector": "11:1595",
+      "lista": "42:3987",
+      "periodo": 60
+    },
+    {
+      "pantalla": "11:1706",
+      "selector": "11:1764",
+      "lista": "42:4028",
+      "periodo": 1440
+    },
+    {
+      "pantalla": "11:2271",
+      "selector": "11:2345",
+      "lista": "42:4069",
+      "periodo": 10
+    },
+    {
+      "pantalla": "11:2416",
+      "selector": "11:2486",
+      "lista": "42:4110",
+      "periodo": 10
+    },
+    {
+      "pantalla": "11:2566",
+      "selector": "11:2648",
+      "lista": "42:4151",
+      "periodo": 10
+    }
+  ],
+  "limites": [
+    "Verificación visual con capturas y estructural mediante Figma MCP.",
+    "Sin ejecución de clics en el reproductor.",
+    "El selector móvil mantiene su presentación anterior.",
+    "Las observaciones del informe revision-p1/revision.md permanecen pendientes y no se dan por resueltas con este ajuste."
+  ]
+}
