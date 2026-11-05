@@ -1,0 +1,123 @@
+{
+  "fecha": "2026-11-04",
+  "archivo_figma": "https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH",
+  "metodo": [
+    "Lectura de capas y reacciones de Figma MCP.",
+    "Evaluación de las ramas declaradas de consulta y selección en el propio script de verificación; no ejecución del reproductor.",
+    "Inspección visual de capturas posteriores a las correcciones."
+  ],
+  "correcciones": [
+    {
+      "hallazgo": "Calidad inconsistente al abrir histórico",
+      "estado": "Corregido; verificación visual y estructural",
+      "historico_rpm": "60:3853",
+      "historico_temperatura": "60:4005",
+      "indices_invalidos": [
+        4,
+        5,
+        9
+      ],
+      "valor_invalido": "—",
+      "calidad": "Inválida"
+    },
+    {
+      "hallazgo": "Área táctil de Ver en móvil",
+      "estado": "Corregido; toda la fila permite consultar el registro",
+      "filas": 60,
+      "alto_minimo": 44
+    },
+    {
+      "hallazgo": "Solo el último punto tiene interacción",
+      "estado": "Corregido; muestras accesibles mediante zonas individuales o selección agrupada",
+      "directSamples": 154,
+      "clusterTargets": 24,
+      "clusterChoices": 20,
+      "samplesReachable": 394,
+      "overlaps": 0
+    },
+    {
+      "hallazgo": "Cambio de variable aplicado antes de Consultar",
+      "estado": "Corregido; selección pendiente separada de la variable aplicada",
+      "selecciones_verificadas": 20,
+      "ramas_de_consulta_verificadas": 40
+    }
+  ],
+  "verificacion": {
+    "mutatedNodeIds": [
+      "I11:2769;587:17061",
+      "I11:2863;587:17061"
+    ],
+    "coverage": {
+      "directSamples": 154,
+      "clusterTargets": 24,
+      "clusterChoices": 20,
+      "samplesReachable": 394,
+      "overlaps": 0
+    },
+    "queryBranchChecks": 40,
+    "pendingSelectionChecks": 20,
+    "mobileRows": 60,
+    "minMobileRowHeight": 44,
+    "destinationChecks": 994,
+    "interactivePlayerTest": "Los runtimes automáticos no iniciaron; posteriormente el responsable ejecutó y confirmó el recorrido manual solicitado.",
+    "errors": []
+  },
+  "capturas": [
+    {
+      "archivo": "detalle-escritorio.png",
+      "nodo": "8:302",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "historico-movil.png",
+      "nodo": "10:1461",
+      "ancho": 360,
+      "alto": 844
+    },
+    {
+      "archivo": "historico-calidad.png",
+      "nodo": "60:3853",
+      "ancho": 1366,
+      "alto": 960
+    },
+    {
+      "archivo": "muestras-agrupadas.png",
+      "nodo": "65:4074",
+      "ancho": 310,
+      "alto": 603
+    }
+  ],
+  "prueba_reproductor": {
+    "estado": "Realizada y confirmada por el responsable",
+    "no_verificado": [
+      "Ejecución automática del reproductor por el agente.",
+      "Navegación por teclado, foco y lector de pantalla.",
+      "Entrada libre de usuario, contraseña y fechas; se conserva como limitación del prototipo."
+    ],
+    "resultado": "Satisfactorio para el recorrido solicitado",
+    "fuente": "Respuesta del responsable en la conversación del 04/11/2026: Lo probé y funciona.",
+    "cobertura_confirmada": [
+      "Acceso → máquinas → detalle → histórico.",
+      "Consulta de una muestra intermedia.",
+      "Consulta de un registro desde una fila móvil.",
+      "Cambio de variable y aplicación mediante Consultar.",
+      "Conservación de la calidad inválida del registro de las 09:09 en histórico y detalle."
+    ],
+    "intentos_automaticos": [
+      {
+        "herramienta": "cua_repl",
+        "resultado": "El proceso Node de confianza terminó al inicializarse."
+      },
+      {
+        "herramienta": "node_repl y @oai/sky",
+        "resultado": "El kernel no pudo iniciar el entorno de seguridad; el reintento tras reiniciar el kernel tampoco inició."
+      }
+    ]
+  },
+  "limites": [
+    "Datos de escenario, sin API ni autenticación reales.",
+    "La lista para muestras agrupadas resuelve la navegación del prototipo; no impone una nueva interfaz al frontend.",
+    "Sin implementación ni validación física."
+  ]
+}

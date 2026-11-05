@@ -134,6 +134,7 @@ Las instrucciones de ejecución y pruebas se incorporarán junto con los compone
 - [Referencia de interfaces y criterios de interacción](docs/diseno/interfaces-p1.md).
 - [Prototipo editable en Figma](https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH) y [guía de recorrido](https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH?node-id=13-3779).
 - [Revisión del prototipo y limitaciones](docs/diseno/revision-p1/revision.md).
+- [Cierre de hallazgos y prueba de recorrido manual](docs/diseno/cierre-p1/cierre.md).
 - [Tablero de desarrollo](https://github.com/users/gabbce/projects/1) y [milestone P1](https://github.com/gabbce/pf-plataforma-monitoreo-web/milestone/1).
 
 Las interfaces son una referencia de implementación; no acreditan software funcional. Los recursos de marca se conservan en [brand/](brand/). Las tareas correspondientes se enlazan desde la ficha de interfaces.

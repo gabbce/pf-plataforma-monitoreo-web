@@ -12,7 +12,7 @@ Esta es una revisión de capturas actuales y conexiones del archivo. El control 
 
 Este informe y sus capturas describen la revisión anterior al ajuste de presentación del panel de lectura y del selector de período. Ese ajuste posterior está documentado en la [verificación específica](../verificacion-ajustes-detalle-selector-p1.json). No resuelve los cuatro hallazgos de este informe.
 
-El responsable revisó la presentación y solicitó los ajustes indicados. Permanece pendiente la comprobación interactiva del recorrido. Los criterios vigentes y las tareas relacionadas se conservan en la [referencia de interfaces](../interfaces-p1.md).
+El responsable revisó la presentación y solicitó los ajustes indicados. La comprobación interactiva posterior se registra en el cierre; las capturas de este informe preceden a esa prueba. Los criterios vigentes y las tareas relacionadas se conservan en la [referencia de interfaces](../interfaces-p1.md).
 
 ## Recorrido revisado
 
@@ -23,7 +23,11 @@ El responsable revisó la presentación y solicitó los ajustes indicados. Perma
 | 3 | Detalle y tendencias | Composición clara en escritorio y tablet; observaciones sobre puntos y continuidad del escenario de calidad. |
 | 4 | Histórico | Filtros, gráfico y tabla presentes; observaciones sobre aplicación de filtros y área táctil móvil. |
 
-Las variantes de móvil, tablet y calidad complementan los pasos 3 y 4. El alcance de la revisión del responsable y los ajustes posteriores se aclaran arriba; la validación interactiva permanece pendiente.
+Las variantes de móvil, tablet y calidad complementan los pasos 3 y 4. El alcance de la revisión del responsable y los ajustes posteriores se aclaran arriba; la validación interactiva aún estaba pendiente al realizar esta revisión inicial.
+
+## Estado posterior de los hallazgos
+
+Los cuatro hallazgos se corrigieron después de esta revisión. El [cierre](../cierre-p1/cierre.md) y su evidencia conservan las correcciones y las comprobaciones ejecutadas. El cierre incorpora la prueba de recorrido manual posteriormente ejecutada y confirmada satisfactoriamente por el responsable; no se atribuyen esos clics a esta revisión estructural inicial. El contenido siguiente describe los defectos encontrados antes de corregirlos.
 
 ## Hallazgos
 

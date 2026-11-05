@@ -4,7 +4,7 @@ Fecha: 04/11/2026.
 
 ## Estado y alcance
 
-El alcance del P1, la dirección visual y los criterios de interacción de esta ficha fueron aprobados por el responsable el 04/11/2026. La base aprobada se utilizó para construir el prototipo editable en Figma. El responsable revisó la presentación y solicitó ajustes en el detalle de lectura y el selector de período, que fueron incorporados. La referencia se consolida para continuar con P1; permanecen pendientes los cuatro hallazgos de la revisión y la prueba interactiva del reproductor.
+El alcance del P1, la dirección visual y los criterios de interacción de esta ficha fueron aprobados por el responsable el 04/11/2026. La base aprobada se utilizó para construir el prototipo editable en Figma. El responsable revisó la presentación y solicitó ajustes en el detalle de lectura y el selector de período, que fueron incorporados. La referencia se consolida para continuar con P1; los cuatro hallazgos de la revisión fueron corregidos y comprobados visual y estructuralmente. El responsable ejecutó y confirmó satisfactoriamente la prueba de recorrido interactivo; el cierre distingue esa comprobación manual de las verificaciones del agente.
 
 Este documento es una referencia de diseño de interfaz ligada al prototipo; no sustituye las fuentes canónicas ni acredita implementación o validación funcional.
 
@@ -109,7 +109,7 @@ Límites de esta evidencia:
 
 [Evidencia de verificación inicial](verificacion-figma-p1.json).
 
-Ajuste posterior a las capturas del informe de revisión, del 04/11/2026: se reformateó el detalle de lectura y se sustituyó el selector central de escritorio y tablet por listas ancladas. [Verificación del ajuste](verificacion-ajustes-detalle-selector-p1.json). Las observaciones del informe de revisión permanecen pendientes.
+Ajuste posterior a las capturas del informe de revisión, del 04/11/2026: se reformateó el detalle de lectura y se sustituyó el selector central de escritorio y tablet por listas ancladas. [Verificación del ajuste](verificacion-ajustes-detalle-selector-p1.json). Las observaciones fueron corregidas posteriormente; el [cierre de revisión](cierre-p1/cierre.md) conserva el resultado y sus límites.
 
 
 ## Trazabilidad con las tareas del P1
@@ -119,7 +119,7 @@ Ajuste posterior a las capturas del informe de revisión, del 04/11/2026: se ref
 | [P1-03 · Acceder a una máquina autorizada](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues/3) | Acceso, máquinas autorizadas, sesión vencida y acceso denegado. |
 | [P1-06 · Consultar evolución y vigencia](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues/6) | Detalle, tendencias recientes, panel de lectura, histórico, filtros y estados de consulta o calidad. |
 
-Los criterios aprobados de esta ficha orientan la implementación. Cuando una interacción del prototipo difiera, se conserva el criterio documentado y se consulta el [informe de revisión](revision-p1/revision.md). Sus cuatro hallazgos siguen pendientes: coherencia de calidad entre resumen e histórico, área táctil del detalle móvil, consulta de puntos intermedios y aplicación de filtros mediante «Consultar».
+Los criterios aprobados de esta ficha orientan la implementación. Cuando una interacción del prototipo difiera, se conserva el criterio documentado y se consulta el [informe de revisión](revision-p1/revision.md). Sus cuatro hallazgos se corrigieron: coherencia de calidad entre resumen e histórico, área táctil del detalle móvil, consulta de puntos intermedios y aplicación de filtros mediante «Consultar». El [cierre de revisión](cierre-p1/cierre.md) registra la evidencia visual y estructural y el estado de la prueba interactiva.
 
 Las evidencias corresponden a verificaciones realizadas en momentos distintos. Las capturas del informe preceden al ajuste de panel y selector; la [verificación del ajuste](verificacion-ajustes-detalle-selector-p1.json) documenta ese cambio posterior. No se presentan como capturas del estado más reciente.
 
@@ -134,11 +134,9 @@ Los recursos de marca originales se conservan en [brand/](../../brand/). No se i
 - Correspondencia entre valores destacados, puntos del gráfico e instantes.
 - Las interacciones del prototipo representan el comportamiento previsto; no validan las API, la adquisición ni el funcionamiento físico.
 
-## Resumen preparado para el contexto operativo
+## Contexto operativo actualizado
 
-Pendiente de incorporación en Drive:
-
-El 04/11/2026 se aprobó la base de interfaces del P1: acceso, máquinas autorizadas, detalle e histórico de RPM y temperatura del refrigerante. El detalle combina últimos valores y tendencias recientes, con metadatos completos mediante consulta de detalle y hora de Argentina sin etiqueta de zona. Quedan definidos navegación, filtros, estados alternativos y adaptación a 1366, 768 y 360 px. La referencia visual y los criterios se conservan en docs/diseno/interfaces-p1.md y docs/diseno/estado-actual-p1.png. El prototipo editable en Figma está construido y recibió ajustes de presentación a partir de la revisión del responsable. Se consolidó como referencia para implementar P1, con cuatro hallazgos de revisión y la prueba interactiva pendientes; no se acredita implementación ni validación funcional. El seguimiento de sus vistas corresponde a P1-03 y P1-06 en GitHub. La detección de sesiones permanece fuera de P1 y como propuesta a evaluar al definir P2.
+El [contexto operativo de Drive](https://docs.google.com/document/d/1lcZKgqRuqjYk7nvfggFXdzPMhiSFWBaJg3ZnRPmm7cU/edit) incorpora la referencia de interfaces del P1, sus límites y el estado de verificación. La actualización fue comprobada mediante lectura nativa, conservando el contenido previo. La prueba de recorrido interactivo fue ejecutada y confirmada satisfactoriamente por el responsable.
 
 ## Referencias
 
@@ -146,4 +144,4 @@ El 04/11/2026 se aprobó la base de interfaces del P1: acceso, máquinas autoriz
 - [Diseño detallado de la plataforma](https://docs.google.com/document/d/19Twh3hXmds-d8IhhxrvqQUpINPeg9pSi3yKotonV4Go/edit).
 - [Propuesta pendiente de sesiones para P2](../pendiente-p2-sesiones.md).
 
-La aprobación de los criterios se registra en esta ficha. Las tareas P1-03 y P1-06 de GitHub enlazan esta referencia y el archivo de Figma. La actualización del contexto operativo en Drive permanece preparada y no realizada.
+La aprobación de los criterios se registra en esta ficha. Las tareas P1-03 y P1-06 de GitHub enlazan esta referencia y el archivo de Figma. La referencia y sus límites se incorporaron al contexto operativo en Drive. La prueba de recorrido manual fue confirmada por el responsable; no se acredita funcionalidad de software.
