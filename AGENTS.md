@@ -20,7 +20,7 @@ La plataforma forma parte de una solución integral: máquina → adquisición �
 ## Fuentes de verdad y decisiones
 
 Drive conserva el alcance, los requisitos, el diseño y las decisiones del proyecto.
-El repositorio permite comprobar lo efectivamente implementado y sus verificaciones.
+El repositorio conserva la implementación, sus pruebas y la documentación técnica vigente.
 
 Fuentes de entrada:
 
@@ -96,7 +96,8 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
 - Organiza el desarrollo en [GitHub Projects](https://github.com/users/gabbce/projects/1)
   y las [issues del repositorio](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues),
   con la cuenta personal `gabbce`. Conserva en Drive las definiciones canónicas y
-  en el repositorio el código, las instrucciones y las evidencias técnicas.
+  en el repositorio el código y la documentación técnica. Usa el tablero para
+  estados, prioridades y dependencias; consulta el detalle en la issue vinculada.
 - Antes de implementar, identifica el incremento, la card y el paso correspondiente.
   Revisa el plan, las dependencias y los criterios de aceptación; prepara y refina
   ese trabajo antes de escribir código. Una solicitud de cambio no sustituye esta
@@ -106,8 +107,8 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
   dentro de cada card para evitar duplicar el conteo de avance.
 - La card padre concentra descripción, objetivos, alcance, exclusiones, dependencias,
   referencias pertinentes y criterios de aceptación observables. Sus subissues son
-  pasos verificables, con checklist y evidencia de cierre; heredan el contexto del
-  padre y no repiten su especificación.
+  pasos verificables con checklist; heredan el contexto del padre. Al cerrar la
+  card, resume el resultado integrado y enlaza sus subissues sin repetir el detalle.
 - Refina progresivamente: detalla las cards próximas a ejecución y conserva alcance
   y dependencias de las posteriores. Completa sus pasos antes de abordarlas, sin
   anticipar decisiones de implementación que todavía no hacen falta.
@@ -119,9 +120,16 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
   como Spring Initializr y Vite; verifica y registra las versiones y dependencias.
   Coordina la base de código y la infraestructura Docker desde la inicialización.
   Los esqueletos arrancables son preparación técnica, no funcionalidad validada.
-- Actualiza el seguimiento al iniciar un paso, detectar un bloqueo y cerrar trabajo.
-  Enlaza cambios revisables y verificaciones realmente ejecutadas, con sus resultados
-  y limitaciones. No sustituyas el tablero con bitácoras de avance duplicadas.
+- Actualiza el estado del tablero al iniciar un paso, detectar un bloqueo o cerrar
+  trabajo. Espera la aprobación del responsable sobre los cambios de la tarea antes
+  de escribir en su issue, incluidos los comentarios de avance.
+- Mantén un solo registro de implementación por tarea o subtarea, en su issue.
+  Describe qué se implementó, cómo se resolvió, las decisiones y limitaciones
+  necesarias para entenderlo y los enlaces pertinentes al código o la documentación.
+- Mientras la tarea esté abierta, integra las correcciones y ajustes en el mismo
+  registro aprobado para que describa la implementación resultante. Si un trabajo
+  posterior modifica algo de una tarea ya cerrada, conserva el registro histórico
+  y documenta el cambio en la tarea posterior, enlazando la anterior si aporta contexto.
 - Cierra una subissue cuando su resultado esté comprobado. Cierra una card solo tras
   resolver sus pasos, verificar la aceptación integrada y revisar los cambios.
   Un checklist completo, un commit o un build exitoso no acreditan por sí solos
@@ -155,9 +163,14 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
   dentro de ese alcance sin solicitar nuevamente la misma autorización.
 - Incorpora a esos documentos únicamente contenido aprobado para el proyecto;
   no traslades deliberaciones del chat, alternativas descartadas ni sugerencias sin aprobar.
-- Guarda en el repositorio las instrucciones de ejecución, pruebas y documentación
-  técnica ligada al código. Mantén en Drive los documentos académicos y transversales,
-  dentro de la carpeta correspondiente y respetando la estructura existente.
+- Documenta en el repositorio el funcionamiento vigente, la organización, la
+  configuración y los comandos necesarios para usar o mantener lo implementado.
+  Conserva las pruebas automatizadas y las instrucciones para ejecutarlas cuando
+  sean útiles. Mantén en Drive los documentos académicos y transversales, dentro
+  de la carpeta correspondiente y respetando la estructura existente.
+- Informa en la conversación las verificaciones ejecutadas, sus resultados y sus
+  limitaciones. No guardes en el repositorio, las issues o el tablero la lista de
+  comandos ejecutados, sus salidas ni los resultados de pruebas como registro de avance.
 - Este archivo contiene reglas estables y referencias. El estado del proyecto,
   los pendientes y el inventario completo de fuentes permanecen en el contexto operativo.
 - Mantén el README como entrada al repositorio y AGENTS.md como guía de trabajo.
