@@ -9,6 +9,8 @@
 **/playwright-report/
 .runtime/
 .env
+.env.*
+!.env.example
 *.log
 
 # Metadatos de procedencia de Windows; no forman parte de los recursos.

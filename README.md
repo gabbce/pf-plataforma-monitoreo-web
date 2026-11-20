@@ -6,9 +6,9 @@ Forma parte del Proyecto Final de Carrera de **Gabriel Canavesio**, de Ingenier�
 
 ## Estado del proyecto
 
-El diseño de Station, plataforma e integración está aprobado y consolidado. La implementación se organiza en incrementos funcionales cuyo estado y evidencias se consultan en el seguimiento de GitHub.
+El diseño de Station, plataforma e integración está aprobado. La rama del Prototipo 1 contiene las bases ejecutables de Java y de la interfaz web. El avance de cada incremento se consulta en GitHub.
 
-El desarrollo es incremental y orientado al prototipado: primero un flujo funcional completo y acotado, desde la recepción hasta la consulta de datos; luego, ampliaciones y ajustes a partir de pruebas y revisión. Las capacidades descritas a continuación corresponden al diseño previsto; su implementación y validación se acreditan mediante los resultados de cada incremento.
+El primer incremento prevé un flujo acotado desde la recepción hasta la consulta de datos. Las secciones de alcance y arquitectura describen el sistema objetivo. La sección de preparación indica qué se puede compilar y ejecutar localmente en esta rama.
 
 ## Propósito y alcance
 
@@ -53,9 +53,9 @@ Cada servicio administra sus propios datos. La integración conserva identidad y
 
 | Componente | Tecnologías |
 |---|---|
-| Aplicación local de Station y emulador | Java 21, Spring Boot y SQLite |
+| Aplicación local de Station y emulador | Java 25 LTS, Spring Boot y SQLite |
 | Interfaz web y HMI local | React, TypeScript, Vite y Tailwind CSS |
-| Servicios backend | Java 21 y Spring Boot |
+| Servicios backend | Java 25 LTS y Spring Boot |
 | Entrada a las API | Spring Cloud Gateway |
 | Persistencia de Gestión y Alertas | PostgreSQL |
 | Persistencia de Registros operativos | MongoDB |
@@ -101,19 +101,54 @@ Los documentos generales describen el sistema objetivo y GitHub mantiene el avan
 
 Las reglas de trabajo están en [AGENTS.md](AGENTS.md) y el método completo en el
 [Plan de trabajo de diseño detallado y desarrollo](https://docs.google.com/document/d/1T6OcTK27DG3hy_uPu2W3E74zdhrwLITGQk2c_oEcMM4/edit).
-El tablero conserva el estado operativo; Drive mantiene las decisiones transversales
-y el repositorio las instrucciones y evidencias ligadas al código.
+El tablero conserva el estado operativo. Drive mantiene las decisiones transversales
+y el repositorio conserva el código y las instrucciones de uso.
 
 ## Preparación del repositorio
 
-Para obtener este proyecto mediante SSH:
+Para obtener la base del Prototipo 1:
 
 ```sh
-git clone git@github.com:gabbce/pf-plataforma-monitoreo-web.git
+git clone --branch feat/prototipo-1 https://github.com/gabbce/pf-plataforma-monitoreo-web.git
 cd pf-plataforma-monitoreo-web
 ```
 
-Estos comandos requieren Git y autenticación SSH configurada en GitHub.
+### Organización de la base
+
+| Directorio | Contenido |
+|---|---|
+| `backend/` | Aplicaciones de Gestión y Registros operativos. |
+| `infrastructure/api-gateway/` | Entrada a las API con Spring Cloud Gateway. |
+| `station/auxiliary/` | Aplicación auxiliar externa de Station. |
+| `frontend/` | Aplicación web con React, TypeScript, Vite y Tailwind CSS. |
+| `docs/` | Documentación técnica y referencias de diseño. |
+
+### Compilación y comprobaciones locales
+
+Para Java, configurar un JDK 25 LTS en `JAVA_HOME` y agregar
+`$JAVA_HOME/bin` al inicio de `PATH`. Desde la raíz del repositorio:
+
+```sh
+./mvnw clean verify
+```
+
+El Wrapper instala la versión de Maven declarada por el proyecto. Los cuatro JAR
+se generan dentro del directorio `target/` de su módulo. La guía detalla las
+versiones, los puertos y el arranque local. [Guía de la base Java](docs/base-java-p1-01-1.md)
+
+Para la web, usar Node.js 26.13.1 LTS y npm 12.2.3. Desde la raíz del repositorio:
+
+```sh
+cd frontend
+npm ci
+npm run typecheck
+npm run lint
+npm run build
+```
+
+El build genera el sitio estático en `frontend/dist/`. La guía explica la
+selección de Node y el arranque en desarrollo o en modo de vista previa.
+[Guía de la base web](frontend/README.md)
 
 ### Código de referencia: AgroTrack
 
@@ -126,8 +161,6 @@ git clone git@github.com:gabbce/TP-Desarrollo-de-Software-en-la-Nube-2026.git re
 La preparación se realiza una vez por copia del proyecto. Si esa carpeta ya contiene un clon, reutilízalo sin sobrescribirlo.
 
 El directorio `referencias/agrotrack/` está excluido mediante `.gitignore`. AgroTrack conserva su propio historial y remoto; su código no se incorpora automáticamente a los commits de esta plataforma. Las actualizaciones de ese clon se realizan explícitamente desde su propio repositorio.
-
-Las instrucciones de ejecución y pruebas se incorporarán junto con los componentes ejecutables.
 
 ## Interfaces y seguimiento del P1
 
@@ -152,4 +185,4 @@ Google Drive mantiene las fuentes canónicas del alcance, los requisitos, el dis
 - [Registro de incrementos de desarrollo y validación — Plataforma y auxiliar Station](https://docs.google.com/document/d/1HEcfnedONjGtWyyDrDRskmFqxkQ3vq_fDSl03aKEdiA/edit).
 - [Carpeta de desarrollo del Proyecto Final](https://drive.google.com/drive/folders/11P4yMDp7t1O01jwOhaYpOyxkqQZbYotu).
 
-El contexto operativo contiene el índice completo de fuentes y el estado del proyecto. El repositorio alojará la implementación y su documentación de ejecución y pruebas. Las indicaciones de trabajo se encuentran en [AGENTS.md](AGENTS.md).
+El contexto operativo contiene el índice completo de fuentes y el estado del proyecto. Las indicaciones de trabajo se encuentran en [AGENTS.md](AGENTS.md).

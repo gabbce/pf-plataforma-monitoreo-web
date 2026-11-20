@@ -51,7 +51,7 @@ y agregar `$JAVA_HOME/bin` al inicio de `PATH` para usar el mismo JDK al
 compilar y ejecutar los JAR.
 
 ```sh
-./mvnw clean package
+./mvnw clean verify
 ```
 
 Para iniciar las aplicaciones, ejecutar cada comando en una terminal distinta:
@@ -66,3 +66,19 @@ java -jar station/auxiliary/target/station-auxiliary-0.0.1-SNAPSHOT.jar
 Cada aplicación escucha en `127.0.0.1` y en el puerto indicado en la tabla.
 `SERVER_ADDRESS` y `SERVER_PORT` permiten cambiar esos valores.
 Actuator expone `/actuator/health` con el estado general de la aplicación.
+
+Con las aplicaciones en ejecución, consultar su estado desde otra terminal:
+
+```sh
+curl --fail --silent --show-error http://127.0.0.1:8081/actuator/health
+curl --fail --silent --show-error http://127.0.0.1:8082/actuator/health
+curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health
+curl --fail --silent --show-error http://127.0.0.1:8090/actuator/health
+```
+
+Una aplicación disponible responde con `status` igual a `UP`. Si un puerto está
+ocupado, elegir otro al arrancar y usarlo también en la consulta. Por ejemplo:
+
+```sh
+SERVER_PORT=18082 java -jar backend/records/target/records-0.0.1-SNAPSHOT.jar
+```
