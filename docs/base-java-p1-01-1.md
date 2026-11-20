@@ -19,16 +19,16 @@ Las responsabilidades indican el propósito de cada módulo. En esta etapa cada
 aplicación contiene su punto de entrada, configuración de servidor y endpoint
 de salud.
 
-El `pom.xml` raíz cumple el rol de padre y agregador. Fija Java 21 y Spring Boot
-4.1.2 para los cuatro módulos. Cada aplicación declara el plugin de Spring Boot
-para generar su JAR ejecutable. Gateway importa el BOM de Spring Cloud 2025.1.4
+El `pom.xml` raíz cumple el rol de padre y agregador. Fija Java 25 LTS y Spring Boot
+4.2.0 para los cuatro módulos. Cada aplicación declara el plugin de Spring Boot
+para generar su JAR ejecutable. Gateway importa el BOM de Spring Cloud 2026.0.0
 en su propio POM. La raíz contiene un único Maven Wrapper 3.3.4, en modalidad
 `only-script`, que fija Maven 3.10.0.
 
 ## Generación y adaptación
 
-Los proyectos se generaron como aplicaciones Maven con Java 21, Spring Boot
-4.1.2, empaquetado JAR y grupo `ar.edu.utn.frsf.pfc`.
+Los proyectos se generaron como aplicaciones Maven con empaquetado JAR y grupo
+`ar.edu.utn.frsf.pfc`. Las versiones vigentes se declaran en los POM.
 [Spring Initializr](https://start.spring.io)
 
 | Artefacto | Paquete | Selección en Initializr |
@@ -45,7 +45,10 @@ El auxiliar mantiene su propio módulo de aplicación dentro del mismo build.
 
 ## Compilación y arranque local
 
-Desde la raíz del repositorio, con JDK 21 configurado en Linux o WSL:
+Desde la raíz del repositorio, con JDK 25 configurado en Linux o WSL. La
+versión de referencia es Eclipse Temurin 25.0.5.1+2. Configurar `JAVA_HOME`
+y agregar `$JAVA_HOME/bin` al inicio de `PATH` para usar el mismo JDK al
+compilar y ejecutar los JAR.
 
 ```sh
 ./mvnw clean package

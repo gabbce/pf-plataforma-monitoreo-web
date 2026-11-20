@@ -12,7 +12,7 @@
     <name>ApiGateway</name>
     <description>Base técnica de entrada a las API de la plataforma.</description>
     <properties>
-        <spring-cloud.version>2025.1.4</spring-cloud.version>
+        <spring-cloud.version>2026.0.0</spring-cloud.version>
     </properties>
     <dependencies>
         <dependency>
