@@ -1,0 +1,15 @@
+**
+!frontend/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.ts
+!frontend/tsconfig*.json
+!frontend/src/
+!frontend/src/**
+!infrastructure/
+!infrastructure/platform/
+!infrastructure/platform/nginx.conf
+**/.env
+**/.env.*
+**/*.log
