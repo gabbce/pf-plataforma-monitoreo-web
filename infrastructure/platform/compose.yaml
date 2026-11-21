@@ -50,13 +50,23 @@ services:
     environment:
       SERVER_ADDRESS: 0.0.0.0
       SERVER_PORT: "8080"
+      PLATFORM_MANAGEMENT_URL: http://management:8081
+      PLATFORM_RECORDS_URL: http://records:8082
 
   nginx:
     build:
       context: ../..
       dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8095:80"
+    networks:
+      - default
+      - ingress
+    depends_on:
+      gateway:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/"]
       interval: 5s
       timeout: 5s
       retries: 6
@@ -97,6 +107,7 @@ services:
 networks:
   default:
     internal: true
+  ingress: {}
 
 volumes:
   postgres_data:

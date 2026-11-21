@@ -1,12 +1,11 @@
 # Entorno Docker central del Prototipo 1
 
-El proyecto Compose `pfc-platform` construye tres imágenes Java, una por
-aplicación, y una imagen NGINX con los archivos estáticos del frontend. Los JAR
-se construyen con Maven Wrapper y Temurin 25 LTS. El frontend se construye con
-Node.js 26.13.1 y npm 12.2.3 a partir de su lockfile. Cada base utiliza una imagen
-oficial y volúmenes propios. Las imágenes base se fijan por versión y digest.
+El proyecto Compose `pfc-platform` construye Gestión, Registros y Gateway con
+Maven Wrapper y Temurin 25 LTS. El frontend se construye con Node.js 26.13.1 y
+npm 12.2.3 a partir de su lockfile y se sirve con NGINX 1.30.7. Las imágenes
+base y de bases de datos se fijan por versión y digest.
 
-| Servicio | Dirección dentro de la red | Volúmenes |
+| Servicio | Dirección interna | Volúmenes |
 |---|---|---|
 | Gestión | `management:8081` | |
 | Registros | `records:8082` | |
@@ -16,41 +15,76 @@ oficial y volúmenes propios. Las imágenes base se fijan por versión y digest.
 | MongoDB 9.0.8 de Registros | `mongodb:27017` | `mongo_data` y `mongo_config` |
 
 Gestión y Registros arrancan tras la comprobación de disponibilidad de su
-base. El uso de datos por las aplicaciones corresponde a la implementación
-de dominio. En esta etapa los componentes son accesibles desde la red interna
-de Docker. La publicación por HTTPS y el enrutamiento de API corresponden
-a [P1-02.3](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues/13).
+base. NGINX es el único servicio con un puerto publicado. Escucha en el host
+en `127.0.0.1:8095` y se conecta tanto a la red de entrada como a la privada.
+El [auxiliar](../auxiliary/README.md) conserva su propia red y usa la publicación
+de NGINX a través del host en Docker Desktop. El resto del central solo usa su
+red interna.
+
+NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
+Gateway. Gateway conserva el método, la ruta y los parámetros. Reenvía
+`POST /integration/v1/records` a Registros y
+`GET /integration/v1/configuration` y
+`POST /integration/v1/configuration-results` a Gestión. Los servicios de
+destino incorporarán los controladores de esas operaciones en sus cards.
+Las sondas Actuator de los servicios son internas.
 
 ## Preparación local
 
 Usar Docker Engine y el plugin Compose en Linux o WSL, con acceso a los
 registros de imágenes y dependencias durante la construcción. Ejecutar los
-comandos desde la raíz del repositorio. Se necesita `openssl` para generar
-las contraseñas locales de inicialización.
+comandos desde la raíz del repositorio, ubicado en el sistema de archivos de
+Linux o WSL para conservar los permisos. Los comandos de preparación requieren
+OpenSSL. El resguardo cifrado requiere GnuPG.
 
 ```sh
+./infrastructure/platform/prepare-local-config.sh
+```
+
+El script genera las contraseñas de inicialización si faltan y conserva
+las existentes. Los archivos de las contraseñas usan modo `0444` dentro del
+directorio `0700` para que cada imagen de base pueda leer su secreto montado
+en solo lectura después de bajar privilegios.
+
+Abrir `http://localhost:8095/` desde el host Docker. Esta entrada HTTP
+corresponde al entorno de desarrollo local. El despliegue de la demo y la
+conexión de Stations externas requieren HTTPS.
+
+## Resguardo de configuración
+
+Conservar una copia cifrada de la configuración junto al procedimiento de
+recuperación de los volúmenes. Desde Bash, elegir una ruta nueva para el
+archivo `resguardo` en un directorio restringido fuera del repositorio.
+GnuPG solicita la frase de paso de forma interactiva.
+
+```bash
 (
-  set -eu
+  set -euo pipefail
   umask 077
-  install -d -m 700 .runtime/platform/secrets
-  for secret in postgres-password mongo-password; do
-    file=".runtime/platform/secrets/$secret"
-    if [ ! -e "$file" ]; then
-      (set -C; openssl rand -hex 32 > "$file")
-    fi
-    if [ ! -s "$file" ]; then
-      printf 'Archivo de secreto vacío: %s\n' "$file" >&2
-      exit 1
-    fi
-    chmod 0444 "$file"
-  done
+  resguardo=/ruta/protegida/pfc-configuracion.tar.gpg
+  tar -C .runtime/platform -cf - secrets |
+    gpg --symmetric --cipher-algo AES256 --output "$resguardo"
 )
 ```
 
-El directorio tiene acceso restringido al usuario local. Docker monta cada
-archivo en modo de lectura solo en su base, donde el proceso de arranque
-puede leerlo tras bajar privilegios. Mantener estos archivos junto a los
-volúmenes inicializados para reiniciar con las mismas credenciales.
+Para recuperar los archivos, descomprimir la copia propia en un directorio
+vacío y restringido. Revisar permisos y correspondencia con el entorno antes
+de copiarla a `.runtime/platform`. Conservar las contraseñas asociadas a los
+volúmenes ya inicializados.
+
+```bash
+(
+  set -euo pipefail
+  umask 077
+  resguardo=/ruta/protegida/pfc-configuracion.tar.gpg
+  recuperacion=$(mktemp -d)
+  gpg --decrypt "$resguardo" | tar -xpf - -C "$recuperacion"
+  printf '%s\n' "$recuperacion"
+)
+```
+
+Este resguardo contiene las contraseñas de inicialización. El respaldo de datos
+de PostgreSQL, MongoDB y SQLite requiere su propia operación.
 
 ## Construcción, arranque y diagnóstico
 
@@ -60,23 +94,24 @@ docker compose -f infrastructure/platform/compose.yaml up --build --wait --wait-
 docker compose -f infrastructure/platform/compose.yaml ps
 ```
 
-Para consultar el frontend y los puntos de salud desde la red interna:
+Para consultar el frontend desde el host Docker:
 
 ```sh
-docker compose -f infrastructure/platform/compose.yaml exec -T nginx wget -qO- http://nginx/
-docker compose -f infrastructure/platform/compose.yaml exec -T nginx wget -qO- http://management:8081/actuator/health
-docker compose -f infrastructure/platform/compose.yaml exec -T nginx wget -qO- http://records:8082/actuator/health
-docker compose -f infrastructure/platform/compose.yaml exec -T nginx wget -qO- http://gateway:8080/actuator/health
+curl -fsS http://localhost:8095/
 ```
 
-Consultar los logs del servicio que se quiere diagnosticar. Por ejemplo:
+Para consultar las sondas internas de las aplicaciones Java:
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml exec -T nginx curl -fsS http://management:8081/actuator/health
+docker compose -f infrastructure/platform/compose.yaml exec -T nginx curl -fsS http://records:8082/actuator/health
+docker compose -f infrastructure/platform/compose.yaml exec -T nginx curl -fsS http://gateway:8080/actuator/health
+```
+
+Para diagnosticar un servicio o detener el proyecto conservando los
+volúmenes:
 
 ```sh
 docker compose -f infrastructure/platform/compose.yaml logs --tail 100 postgres
-```
-
-Para detener el proyecto y conservar los volúmenes:
-
-```sh
 docker compose -f infrastructure/platform/compose.yaml down
 ```
