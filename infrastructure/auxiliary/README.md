@@ -14,7 +14,7 @@ SQLite JDBC 3.54.1.0. La ruta se define mediante la propiedad
 `station.storage.sqlite-path`. La inicialización crea un archivo SQLite válido
 si falta y la comprobación de salud revisa su disponibilidad.
 
-## Operación
+## Arranque y diagnóstico
 
 Ejecutar desde la raíz del repositorio, con Docker en ejecución.
 El proyecto auxiliar se puede iniciar de forma independiente.
@@ -22,8 +22,7 @@ El proyecto auxiliar se puede iniciar de forma independiente.
 ```sh
 docker compose -f infrastructure/auxiliary/compose.yaml up --build --wait
 docker compose -f infrastructure/auxiliary/compose.yaml ps
-docker compose -f infrastructure/auxiliary/compose.yaml stop
-docker compose -f infrastructure/auxiliary/compose.yaml start --wait
+docker compose -f infrastructure/auxiliary/compose.yaml logs --tail 100 auxiliary
 ```
 
 Para consultar la salud local o comprobar la conectividad HTTP cuando el
@@ -34,6 +33,30 @@ docker compose -f infrastructure/auxiliary/compose.yaml exec -T auxiliary curl -
 docker compose -f infrastructure/auxiliary/compose.yaml exec -T auxiliary curl -fsS http://host.docker.internal:8095/
 ```
 
-El arranque y la parada se aplican solo al proyecto del auxiliar. Para retirar
-el contenedor y su red conservando el volumen SQLite, usar `docker compose
--f infrastructure/auxiliary/compose.yaml down`.
+## Parada y recreación
+
+Para detener temporalmente el auxiliar y volver a arrancarlo:
+
+```sh
+docker compose -f infrastructure/auxiliary/compose.yaml stop
+docker compose -f infrastructure/auxiliary/compose.yaml start --wait
+```
+
+Con la imagen ya construida, recrear el contenedor con:
+
+```sh
+docker compose -f infrastructure/auxiliary/compose.yaml up --no-build --force-recreate --wait
+```
+
+Para retirar el contenedor y su red, conservar el volumen SQLite con:
+
+```sh
+docker compose -f infrastructure/auxiliary/compose.yaml down
+```
+
+Mantener el mismo nombre de proyecto Compose al iniciar o recrear el
+contenedor permite volver a montar el mismo volumen. Si se indicó un nombre
+con `-p`, repetirlo en cada operación. La opción `down --volumes` elimina
+el volumen SQLite del proyecto. Conservar el volumen mantiene el archivo
+`station.sqlite` en el mismo almacenamiento. El respaldo independiente
+requiere una copia separada y un procedimiento de restauración.

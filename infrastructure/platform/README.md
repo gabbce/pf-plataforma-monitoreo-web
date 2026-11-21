@@ -108,10 +108,39 @@ docker compose -f infrastructure/platform/compose.yaml exec -T nginx curl -fsS h
 docker compose -f infrastructure/platform/compose.yaml exec -T nginx curl -fsS http://gateway:8080/actuator/health
 ```
 
-Para diagnosticar un servicio o detener el proyecto conservando los
-volúmenes:
+Para diagnosticar un servicio, consultar su estado con `ps` y revisar sus
+logs. Por ejemplo:
 
 ```sh
 docker compose -f infrastructure/platform/compose.yaml logs --tail 100 postgres
+```
+
+## Parada y recreación
+
+La parada temporal conserva los contenedores. Para detenerlos y volver a
+arrancar:
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml stop
+docker compose -f infrastructure/platform/compose.yaml start --wait
+```
+
+Con las imágenes ya construidas, recrear los contenedores con:
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml up --no-build --force-recreate --wait --wait-timeout 180
+```
+
+Para retirar los contenedores y las redes del central, conservar sus volúmenes
+nombrados con el siguiente comando:
+
+```sh
 docker compose -f infrastructure/platform/compose.yaml down
 ```
+
+Usar el mismo nombre de proyecto Compose, los mismos volúmenes y las
+contraseñas asociadas para volver a montar los datos existentes. Si se indicó
+un nombre con `-p`, repetirlo en cada operación. La opción `down --volumes`
+elimina los volúmenes del proyecto. La recreación conserva los datos en el
+mismo almacenamiento local. El respaldo independiente requiere una copia
+separada de los datos y un procedimiento de restauración.

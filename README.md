@@ -150,6 +150,16 @@ El build genera el sitio estático en `frontend/dist/`. La guía explica la
 selección de Node y el arranque en desarrollo o en modo de vista previa.
 [Guía de la base web](frontend/README.md)
 
+### Entorno Docker de desarrollo
+
+El entorno local funciona con dos proyectos Compose. El central publica el
+frontend en `http://localhost:8095/` y el auxiliar usa su propia red y volumen
+SQLite. Cada guía incluye el arranque, el diagnóstico y la recreación de
+contenedores conservando los volúmenes.
+
+- [Entorno central](infrastructure/platform/README.md)
+- [Auxiliar de Station](infrastructure/auxiliary/README.md)
+
 ### Código de referencia: AgroTrack
 
 Para consultar y evaluar la reutilización de código de [AgroTrack](https://github.com/gabbce/TP-Desarrollo-de-Software-en-la-Nube-2026), clona su repositorio en la ubicación acordada, desde la raíz de este proyecto:
