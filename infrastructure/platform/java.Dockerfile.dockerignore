@@ -21,6 +21,8 @@
 !station/
 !station/auxiliary/
 !station/auxiliary/pom.xml
+!station/auxiliary/src/
+!station/auxiliary/src/**
 **/.env
 **/.env.*
 **/*.log

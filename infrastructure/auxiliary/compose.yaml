@@ -1,0 +1,25 @@
+name: pfc-auxiliary
+
+services:
+  auxiliary:
+    build:
+      context: ../..
+      dockerfile: infrastructure/platform/java.Dockerfile
+      target: auxiliary
+      args:
+        MODULE: station/auxiliary
+    command: ["--station.storage.sqlite-path=/var/lib/station/station.sqlite"]
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: "8090"
+    volumes:
+      - sqlite_data:/var/lib/station
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8090/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  sqlite_data:
