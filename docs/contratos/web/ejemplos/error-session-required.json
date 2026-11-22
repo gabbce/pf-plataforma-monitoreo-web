@@ -1,0 +1,9 @@
+{
+  "summary": "Sesión ausente, inválida o vencida",
+  "value": {
+    "type": "about:blank",
+    "title": "Se requiere iniciar sesión",
+    "status": 401,
+    "code": "SESSION_REQUIRED"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "summary": "Credenciales ficticias del escenario",
+  "value": {
+    "identifier": "tecnico-ejemplo",
+    "password": "ejemplo-sin-validez"
+  }
+}

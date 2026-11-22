@@ -1,0 +1,9 @@
+{
+  "summary": "Intervalo o parámetros de consulta inválidos",
+  "value": {
+    "type": "about:blank",
+    "title": "Consulta histórica inválida",
+    "status": 400,
+    "code": "INVALID_HISTORY_QUERY"
+  }
+}

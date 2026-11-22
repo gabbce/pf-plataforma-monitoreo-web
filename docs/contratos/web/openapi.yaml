@@ -1,0 +1,765 @@
+openapi: 3.1.2
+info:
+  title: API web de la plataforma de monitoreo
+  version: 1.0.0
+  description: |-
+    Contrato de acceso y consulta web del Prototipo 1 para una máquina ficticia y dos variables DATA.
+
+    NGINX publica la web y deriva /api al Gateway. El Gateway enruta a Gestión y Registros. Cada servicio aplica las comprobaciones de acceso antes de entregar información. La sesión web y sus permisos se resuelven en Gestión.
+
+    El intercambio Station–plataforma conserva su contrato en /integration/v1. La API web utiliza sesión de usuario. El P1 de desarrollo usa la entrada HTTP local de NGINX. Los atributos de cookie aquí descritos corresponden al acceso por HTTPS de la demo. La configuración de autenticación local se concreta en P1-03.
+
+    Los ejemplos son ficticios. El escenario principal contiene diez instantes por variable y veinte originales DATA. Los ejemplos de lecturas inválidas, desactualizadas, vacías y tardías representan escenarios aislados.
+servers:
+  - url: /api/v1
+    description: Entrada API en el mismo origen que la web.
+tags:
+  - name: Access
+    description: Acceso web en Gestión.
+  - name: Machines
+    description: Listado y detalle autorizado en Gestión.
+  - name: Measurements
+    description: Consulta operativa autorizada en Registros.
+security:
+  - webSession: []
+paths:
+  /auth/csrf:
+    get:
+      tags:
+        - Access
+      operationId: getCsrfToken
+      summary: Obtener el token CSRF de ingreso
+      description: Gestión entrega un token vinculado al estado previo al ingreso. Puede establecer la cookie
+        del contexto previo. El navegador conserva las cookies y usa el token en el encabezado X-CSRF-TOKEN
+        al enviar el ingreso. Este recurso está disponible antes de autenticar y su respuesta no se almacena
+        en caché.
+      security: []
+      responses:
+        '200':
+          description: Token de ingreso emitido.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            Set-Cookie:
+              $ref: '#/components/headers/PreAuthenticationCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfToken'
+              examples:
+                token:
+                  $ref: ./ejemplos/csrf-token.json
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /auth/session:
+    post:
+      tags:
+        - Access
+      operationId: createWebSession
+      summary: Iniciar la sesión web
+      description: Gestión valida primero el token CSRF contra el contexto previo y luego verifica el identificador
+        y la contraseña. Si el ingreso es válido, emite una sesión web opaca con un nuevo identificador. El
+        navegador utiliza la cookie en las consultas siguientes. El error de credenciales es genérico.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              login:
+                $ref: ./ejemplos/login-request.json
+      responses:
+        '204':
+          description: Sesión iniciada. El cliente puede cargar el listado autorizado.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/WebSessionCookie'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/InvalidCredentials'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /machines:
+    get:
+      tags:
+        - Machines
+      operationId: listAuthorizedMachines
+      summary: Listar las máquinas autorizadas
+      description: Gestión valida sesión y permiso de consulta y devuelve exclusivamente las máquinas accesibles
+        según roles y asociaciones vigentes. Un usuario habilitado para consultar que no tenga máquinas accesibles
+        recibe una colección vacía.
+      responses:
+        '200':
+          description: Listado autorizado.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineList'
+              examples:
+                authorized:
+                  $ref: ./ejemplos/machines-authorized.json
+                empty:
+                  $ref: ./ejemplos/machines-empty.json
+        '401':
+          $ref: '#/components/responses/SessionRequired'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /machines/{chassis}:
+    parameters:
+      - $ref: '#/components/parameters/Chassis'
+    get:
+      tags:
+        - Machines
+      operationId: getMachine
+      summary: Obtener el detalle autorizado de una máquina
+      description: Gestión comprueba la sesión, los permisos y la asociación con la máquina antes de devolver
+        su información. El último contacto autenticado se mantiene separado de la ocurrencia, recepción y vigencia
+        de cada dato.
+      responses:
+        '200':
+          description: Máquina y definiciones disponibles.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineDetail'
+              examples:
+                normal:
+                  $ref: ./ejemplos/machine-detail.json
+        '401':
+          $ref: '#/components/responses/SessionRequired'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /machines/{chassis}/measurements/latest:
+    parameters:
+      - $ref: '#/components/parameters/Chassis'
+    get:
+      tags:
+        - Measurements
+      operationId: listLatestMeasurements
+      summary: Consultar la última lectura de cada definición
+      description: |-
+        Registros verifica sesión y acceso a la máquina mediante Gestión antes de entregar datos. Por cada definición con información operativa, devuelve el registro más reciente por ocurrencia y, a igual ocurrencia, por identificador en orden lexicográfico ascendente. Se toma el último de ese orden.
+
+        Una lectura más reciente inválida se devuelve con su calidad y valor nulo. Una variable sin registros se omite de items y permanece disponible en las definiciones del detalle de máquina. La frescura se informa por separado según la regla aplicable del catálogo o configuración. Registros fija asOf con la misma regla de visibilidad del histórico. Para las ventanas recientes, el cliente usa ese instante como referencia temporal y lo envía con el mismo intervalo al consultar el histórico de cada variable. Los registros REVIEW quedan fuera.
+      responses:
+        '200':
+          description: Lecturas operativas más recientes y corte de consulta.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LatestMeasurements'
+              examples:
+                normal:
+                  $ref: ./ejemplos/latest-normal.json
+                invalid:
+                  $ref: ./ejemplos/latest-invalid.json
+                partial:
+                  $ref: ./ejemplos/latest-partial.json
+                stale:
+                  $ref: ./ejemplos/latest-stale.json
+                afterLateRecord:
+                  $ref: ./ejemplos/latest-after-late-record.json
+        '401':
+          $ref: '#/components/responses/SessionRequired'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /machines/{chassis}/measurements/history:
+    parameters:
+      - $ref: '#/components/parameters/Chassis'
+    get:
+      tags:
+        - Measurements
+      operationId: listMeasurementHistory
+      summary: Consultar el histórico de una variable
+      description: |-
+        Registros verifica sesión y acceso a la máquina mediante Gestión antes de entregar datos. Consulta una definición por vez. El filtro usa la ocurrencia original con inicio inclusivo y fin exclusivo. Ordena por occurredAt y después por recordId, ambos ascendentes. Para una lectura tardía conserva el contexto correspondiente a su ocurrencia y la configuración realmente aplicada.
+
+        La primera consulta puede omitir asOf. Registros fija entonces un corte UTC de visibilidad de los originales. Para una consulta que reutilice asOf, cada registro incluido debe tener receivedAt menor o igual al corte y haber quedado confirmado y visible al fijarlo. Un registro que se vuelve visible después del corte queda fuera de todas las páginas de esa consulta, incluso si su primera recepción fue anterior. Registros debe garantizar este orden entre la confirmación de los originales y la fijación del corte, también con escrituras concurrentes.
+
+        El cliente reutiliza el asOf devuelto en todas las páginas y series de la consulta, incluidas las que consuma el gráfico. total corresponde al conjunto completo para ese intervalo, definición y corte. La tabla puede mostrar una página y el gráfico recorre todas las páginas del mismo conjunto.
+
+        Registros devuelve una colección vacía para un intervalo válido sin datos. Un intervalo con from igual o posterior a to, un asOf futuro o parámetros fuera de esquema producen 400. Los registros REVIEW quedan fuera.
+      parameters:
+        - $ref: '#/components/parameters/DefinitionId'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Página de registros operativos y total del filtro.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryPage'
+              examples:
+                rpmPageOne:
+                  $ref: ./ejemplos/history-rpm-page-1.json
+                rpmPageTwo:
+                  $ref: ./ejemplos/history-rpm-page-2.json
+                coolant:
+                  $ref: ./ejemplos/history-coolant.json
+                empty:
+                  $ref: ./ejemplos/history-empty.json
+                late:
+                  $ref: ./ejemplos/history-late-record.json
+                beforeLateConfirmation:
+                  $ref: ./ejemplos/history-before-late-confirmation.json
+        '400':
+          $ref: '#/components/responses/InvalidHistoryQuery'
+        '401':
+          $ref: '#/components/responses/SessionRequired'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    webSession:
+      type: apiKey
+      in: cookie
+      name: PFC_SESSION
+      description: Identificador opaco de sesión de usuario gestionado por Gestión. Para la demo HTTPS se emite
+        como cookie Secure, HttpOnly y SameSite=Lax.
+  headers:
+    NoStore:
+      description: Impide almacenar datos de sesión y respuestas de consulta en caché.
+      schema:
+        type: string
+        const: no-store
+    PreAuthenticationCookie:
+      description: Cookie del contexto previo al ingreso, cuando se requiere establecerlo. El navegador la
+        conserva al presentar el token CSRF.
+      schema:
+        type: string
+    WebSessionCookie:
+      required: true
+      description: Cookie PFC_SESSION del identificador opaco emitido después de validar el ingreso. En HTTPS
+        usa Path=/api/v1, Secure, HttpOnly y SameSite=Lax.
+      schema:
+        type: string
+      examples:
+        https:
+          $ref: ./ejemplos/session-cookie.json
+    SessionChallenge:
+      required: true
+      description: Indica a la interfaz que debe iniciar sesión web. El esquema Session pertenece a esta API.
+      schema:
+        type: string
+        const: Session realm="PFC"
+  parameters:
+    CsrfHeader:
+      name: X-CSRF-TOKEN
+      in: header
+      required: true
+      description: Token del contexto previo al ingreso obtenido por GET /auth/csrf.
+      schema:
+        type: string
+        minLength: 1
+        description: Token CSRF.
+      examples:
+        login:
+          $ref: ./ejemplos/csrf-header.json
+    Chassis:
+      name: chassis
+      in: path
+      required: true
+      description: Chasis textual con sus ceros iniciales.
+      schema:
+        $ref: '#/components/schemas/Chassis'
+      example: '000123'
+    DefinitionId:
+      name: definitionId
+      in: query
+      required: true
+      description: Única definición consultada.
+      schema:
+        $ref: '#/components/schemas/DefinitionId'
+      example: engine.rpm
+    From:
+      name: from
+      in: query
+      required: true
+      description: Inicio inclusivo en UTC.
+      schema:
+        $ref: '#/components/schemas/UtcInstant'
+      example: '2026-01-15T12:00:00Z'
+    To:
+      name: to
+      in: query
+      required: true
+      description: Fin exclusivo en UTC, posterior a from.
+      schema:
+        $ref: '#/components/schemas/UtcInstant'
+      example: '2026-01-15T12:10:00Z'
+    Page:
+      name: page
+      in: query
+      required: false
+      description: La primera página es 1. Si la página queda fuera del conjunto autorizado filtrado se devuelve
+        la colección vacía y se conserva total.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    Size:
+      name: size
+      in: query
+      required: false
+      description: Cantidad máxima solicitada de registros por página. El valor predeterminado para P1 es 20.
+        El máximo contractual es 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 5
+    AsOf:
+      name: asOf
+      in: query
+      required: false
+      description: Corte UTC de visibilidad de los originales. Se omite para una consulta nueva o se reutiliza
+        el devuelto para continuar sobre el mismo conjunto.
+      schema:
+        $ref: '#/components/schemas/UtcInstant'
+      example: '2026-01-15T12:11:00Z'
+  responses:
+    InvalidRequest:
+      description: Solicitud de ingreso con estructura inválida.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            invalidRequest:
+              $ref: ./ejemplos/error-invalid-request.json
+    InvalidCredentials:
+      description: El ingreso fue rechazado con un mensaje genérico.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        WWW-Authenticate:
+          $ref: '#/components/headers/SessionChallenge'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            invalidCredentials:
+              $ref: ./ejemplos/error-invalid-credentials.json
+    InvalidCsrf:
+      description: El token CSRF falta, venció o no corresponde al contexto previo.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            invalidCsrf:
+              $ref: ./ejemplos/error-invalid-csrf.json
+    SessionRequired:
+      description: Sesión ausente, inválida o vencida. La interfaz solicita un nuevo ingreso.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+        WWW-Authenticate:
+          $ref: '#/components/headers/SessionChallenge'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            sessionRequired:
+              $ref: ./ejemplos/error-session-required.json
+    AccessDenied:
+      description: La sesión es válida y el acceso está denegado. Un chasis fuera del conjunto autorizado recibe
+        la misma respuesta que un chasis inexistente para ese usuario.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            accessDenied:
+              $ref: ./ejemplos/error-access-denied.json
+    InvalidHistoryQuery:
+      description: El intervalo o los parámetros de consulta son inválidos.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            invalidHistory:
+              $ref: ./ejemplos/error-invalid-history-query.json
+    ServerError:
+      description: Ocurrió un error al completar la operación. La interfaz puede ofrecer reintentar.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            serverError:
+              $ref: ./ejemplos/error-server.json
+  schemas:
+    UtcInstant:
+      type: string
+      format: date-time
+      pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$
+      description: Instante ISO 8601 en UTC terminado en Z.
+    Chassis:
+      type: string
+      minLength: 1
+      description: Identificador textual de la Instancia. Se conserva literalmente, incluidos los ceros iniciales.
+    DefinitionId:
+      type: string
+      enum:
+        - engine.rpm
+        - engine.coolant_temperature
+      description: Definición de dato del catálogo del P1.
+    CsrfToken:
+      type: object
+      description: Token ligado al estado previo al ingreso.
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Token CSRF que se envía al ingresar.
+    LoginRequest:
+      type: object
+      description: Credenciales web del usuario.
+      additionalProperties: false
+      required:
+        - identifier
+        - password
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          description: Identificador de usuario.
+        password:
+          type: string
+          minLength: 1
+          description: Contraseña del usuario.
+          format: password
+          writeOnly: true
+    Problem:
+      type: object
+      description: Error HTTP sin datos protegidos ni detalles internos.
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+        - code
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          description: Identificador del tipo de problema.
+        title:
+          type: string
+          minLength: 1
+          description: Descripción pública y genérica del problema.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: Código de estado HTTP de la respuesta.
+        code:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - INVALID_CREDENTIALS
+            - INVALID_CSRF
+            - SESSION_REQUIRED
+            - ACCESS_DENIED
+            - INVALID_HISTORY_QUERY
+            - SERVER_ERROR
+          description: Código estable para la interfaz.
+    MachineSummary:
+      type: object
+      description: Identificación y contacto de una máquina autorizada.
+      additionalProperties: false
+      required:
+        - chassis
+        - lastAuthenticatedContactAt
+      properties:
+        chassis:
+          $ref: '#/components/schemas/Chassis'
+        lastAuthenticatedContactAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$
+          description: Instante UTC del último intercambio autenticado de la Station, incluida la consulta
+            de configuración. Es nulo cuando todavía no hay contacto registrado.
+    MachineList:
+      type: object
+      description: Colección de máquinas autorizadas.
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MachineSummary'
+    MachineDetail:
+      type: object
+      description: Detalle de la máquina para las vistas web del P1.
+      additionalProperties: false
+      required:
+        - chassis
+        - lastAuthenticatedContactAt
+        - definitions
+      properties:
+        chassis:
+          $ref: '#/components/schemas/Chassis'
+        lastAuthenticatedContactAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$
+          description: Instante UTC del último intercambio autenticado de la Station, incluida la consulta
+            de configuración. Es nulo cuando todavía no hay contacto registrado.
+        definitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeasurementDefinition'
+    MeasurementDefinition:
+      type: object
+      description: Definición visible en el catálogo de la máquina.
+      additionalProperties: false
+      required:
+        - definitionId
+        - name
+        - unit
+      properties:
+        definitionId:
+          $ref: '#/components/schemas/DefinitionId'
+        name:
+          type: string
+          minLength: 1
+          description: Nombre de la variable para la interfaz.
+        unit:
+          type: string
+          enum:
+            - rpm
+            - °C
+          description: Unidad conservada para la definición de dato.
+      allOf:
+        - if:
+            properties:
+              definitionId:
+                const: engine.rpm
+          then:
+            properties:
+              unit:
+                const: rpm
+          else:
+            properties:
+              unit:
+                const: °C
+    MeasurementContext:
+      type: object
+      description: Referencias históricas del original para interpretar la lectura.
+      additionalProperties: false
+      required:
+        - sourceId
+        - appliedConfigVersion
+      properties:
+        sourceId:
+          type: string
+          minLength: 1
+          description: Fuente lógica efectiva para la Instancia y definición al ocurrir el registro.
+        appliedConfigVersion:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Versión realmente aplicada cuando corresponda. Es nula cuando el original no la informa.
+    Measurement:
+      type: object
+      description: Proyección autorizada de un registro DATA operativo. Se excluyen registros REVIEW y los
+        instantes UTC se conservan.
+      additionalProperties: false
+      required:
+        - recordId
+        - definitionId
+        - value
+        - unit
+        - quality
+        - occurredAt
+        - receivedAt
+        - context
+      properties:
+        recordId:
+          type: string
+          minLength: 1
+          description: Identificador estable del original.
+        definitionId:
+          $ref: '#/components/schemas/DefinitionId'
+        value:
+          type:
+            - number
+            - 'null'
+          description: Valor numérico cuando la calidad es VALID, incluido un cero válido. Las otras calidades
+            exponen null en la consulta web y el original se conserva.
+        unit:
+          type: string
+          enum:
+            - rpm
+            - °C
+          description: Unidad conservada para la definición de dato.
+        quality:
+          type: string
+          enum:
+            - VALID
+            - MISSING
+            - INVALID
+            - NOT_EVALUABLE
+          description: Calidad original del dato según el contrato de Station.
+        occurredAt:
+          $ref: '#/components/schemas/UtcInstant'
+        receivedAt:
+          $ref: '#/components/schemas/UtcInstant'
+          description: Primera recepción registrada por la plataforma al conservar el original. Se mantiene
+            en retransmisiones.
+        context:
+          $ref: '#/components/schemas/MeasurementContext'
+      allOf:
+        - if:
+            properties:
+              definitionId:
+                const: engine.rpm
+          then:
+            properties:
+              unit:
+                const: rpm
+          else:
+            properties:
+              unit:
+                const: °C
+        - if:
+            properties:
+              quality:
+                const: VALID
+          then:
+            properties:
+              value:
+                type: number
+          else:
+            properties:
+              value:
+                type: 'null'
+    LatestMeasurement:
+      type: object
+      description: Última lectura de una definición y su frescura.
+      additionalProperties: false
+      required:
+        - measurement
+        - freshness
+      properties:
+        measurement:
+          $ref: '#/components/schemas/Measurement'
+        freshness:
+          type: string
+          enum:
+            - CURRENT
+            - STALE
+            - UNKNOWN
+          description: Resultado de la regla de vigencia aplicable a la ocurrencia para el corte de consulta.
+            UNKNOWN indica que la vigencia no puede determinarse.
+    LatestMeasurements:
+      type: object
+      description: Últimas lecturas operativas por definición.
+      additionalProperties: false
+      required:
+        - asOf
+        - items
+      properties:
+        asOf:
+          $ref: '#/components/schemas/UtcInstant'
+          description: Corte UTC de visibilidad y referencia para las ventanas recientes y la antigüedad.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LatestMeasurement'
+    HistoryPage:
+      type: object
+      description: Página ordenada del histórico de una definición.
+      additionalProperties: false
+      required:
+        - asOf
+        - page
+        - size
+        - total
+        - items
+      properties:
+        asOf:
+          $ref: '#/components/schemas/UtcInstant'
+          description: Corte UTC de visibilidad que se conserva en todas las páginas y series de la consulta.
+        page:
+          type: integer
+          minimum: 1
+          description: Número de página devuelta.
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Tamaño solicitado, incluso cuando items contiene menos registros.
+        total:
+          type: integer
+          minimum: 0
+          description: Cantidad total de registros para la definición, el intervalo y el corte.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Measurement'

@@ -1,0 +1,41 @@
+{
+  "summary": "Última lectura de RPM inválida",
+  "description": "Escenario aislado. La consulta muestra la calidad de la lectura más reciente y conserva la otra variable.",
+  "value": {
+    "asOf": "2026-01-15T12:11:00Z",
+    "items": [
+      {
+        "measurement": {
+          "recordId": "00000000-0000-4000-8000-000000000022",
+          "definitionId": "engine.rpm",
+          "value": null,
+          "unit": "rpm",
+          "quality": "INVALID",
+          "occurredAt": "2026-01-15T12:10:00Z",
+          "receivedAt": "2026-01-15T12:10:05Z",
+          "context": {
+            "sourceId": "rpm-b",
+            "appliedConfigVersion": "cfg-b"
+          }
+        },
+        "freshness": "CURRENT"
+      },
+      {
+        "measurement": {
+          "recordId": "00000000-0000-4000-8000-000000000020",
+          "definitionId": "engine.coolant_temperature",
+          "value": 55,
+          "unit": "°C",
+          "quality": "VALID",
+          "occurredAt": "2026-01-15T12:09:00Z",
+          "receivedAt": "2026-01-15T12:09:05Z",
+          "context": {
+            "sourceId": "coolant-a",
+            "appliedConfigVersion": "cfg-b"
+          }
+        },
+        "freshness": "CURRENT"
+      }
+    ]
+  }
+}

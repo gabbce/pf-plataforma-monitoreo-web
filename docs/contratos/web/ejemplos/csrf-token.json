@@ -1,0 +1,6 @@
+{
+  "summary": "Token CSRF ficticio",
+  "value": {
+    "token": "pfc-example-csrf-token"
+  }
+}

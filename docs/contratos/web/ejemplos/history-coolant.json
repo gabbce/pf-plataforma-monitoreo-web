@@ -1,0 +1,142 @@
+{
+  "summary": "Temperatura, escenario principal",
+  "description": "Consulta con definitionId=engine.coolant_temperature, from=2026-01-15T12:00:00Z, to=2026-01-15T12:10:00Z, page=1, size=10 y asOf=2026-01-15T12:11:00Z.",
+  "value": {
+    "asOf": "2026-01-15T12:11:00Z",
+    "page": 1,
+    "size": 10,
+    "total": 10,
+    "items": [
+      {
+        "recordId": "00000000-0000-4000-8000-000000000011",
+        "definitionId": "engine.coolant_temperature",
+        "value": 33,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:00:00Z",
+        "receivedAt": "2026-01-15T12:00:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000012",
+        "definitionId": "engine.coolant_temperature",
+        "value": 35,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:01:00Z",
+        "receivedAt": "2026-01-15T12:01:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000013",
+        "definitionId": "engine.coolant_temperature",
+        "value": 38,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:02:00Z",
+        "receivedAt": "2026-01-15T12:02:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000014",
+        "definitionId": "engine.coolant_temperature",
+        "value": 40,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:03:00Z",
+        "receivedAt": "2026-01-15T12:03:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000015",
+        "definitionId": "engine.coolant_temperature",
+        "value": 42,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:04:00Z",
+        "receivedAt": "2026-01-15T12:04:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000016",
+        "definitionId": "engine.coolant_temperature",
+        "value": 45,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:05:00Z",
+        "receivedAt": "2026-01-15T12:05:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000017",
+        "definitionId": "engine.coolant_temperature",
+        "value": 48,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:06:00Z",
+        "receivedAt": "2026-01-15T12:06:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000018",
+        "definitionId": "engine.coolant_temperature",
+        "value": 50,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:07:00Z",
+        "receivedAt": "2026-01-15T12:07:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000019",
+        "definitionId": "engine.coolant_temperature",
+        "value": 53,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:08:00Z",
+        "receivedAt": "2026-01-15T12:08:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000020",
+        "definitionId": "engine.coolant_temperature",
+        "value": 55,
+        "unit": "°C",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:09:00Z",
+        "receivedAt": "2026-01-15T12:09:05Z",
+        "context": {
+          "sourceId": "coolant-a",
+          "appliedConfigVersion": "cfg-b"
+        }
+      }
+    ]
+  }
+}

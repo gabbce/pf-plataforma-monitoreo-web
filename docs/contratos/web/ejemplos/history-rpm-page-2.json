@@ -1,0 +1,77 @@
+{
+  "summary": "RPM, segunda página con el mismo corte",
+  "description": "Consulta con definitionId=engine.rpm, from=2026-01-15T12:00:00Z, to=2026-01-15T12:10:00Z, page=2, size=5 y asOf=2026-01-15T12:11:00Z.",
+  "value": {
+    "asOf": "2026-01-15T12:11:00Z",
+    "page": 2,
+    "size": 5,
+    "total": 10,
+    "items": [
+      {
+        "recordId": "00000000-0000-4000-8000-000000000006",
+        "definitionId": "engine.rpm",
+        "value": 1100,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:05:00Z",
+        "receivedAt": "2026-01-15T12:05:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000007",
+        "definitionId": "engine.rpm",
+        "value": 1160,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:06:00Z",
+        "receivedAt": "2026-01-15T12:06:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000008",
+        "definitionId": "engine.rpm",
+        "value": 1190,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:07:00Z",
+        "receivedAt": "2026-01-15T12:07:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000009",
+        "definitionId": "engine.rpm",
+        "value": 1210,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:08:00Z",
+        "receivedAt": "2026-01-15T12:08:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000010",
+        "definitionId": "engine.rpm",
+        "value": 1200,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:09:00Z",
+        "receivedAt": "2026-01-15T12:09:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      }
+    ]
+  }
+}

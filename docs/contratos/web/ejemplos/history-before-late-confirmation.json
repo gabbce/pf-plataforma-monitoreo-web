@@ -1,0 +1,25 @@
+{
+  "summary": "Histórico fijado mientras la lectura tardía espera confirmación",
+  "description": "Escenario aislado de la lectura tardía. Consulta con definitionId=engine.rpm, from=2026-01-15T12:00:00Z, to=2026-01-15T12:10:00Z, page=1, size=5 y asOf=2026-01-15T12:12:30Z. La lectura de las 12:04:30 UTC ya se recibió y se confirma a las 12:12:45 UTC. Por eso el resultado permanece igual al repetirlo con este asOf.",
+  "value": {
+    "asOf": "2026-01-15T12:12:30Z",
+    "page": 1,
+    "size": 5,
+    "total": 1,
+    "items": [
+      {
+        "recordId": "00000000-0000-4000-8000-000000000010",
+        "definitionId": "engine.rpm",
+        "value": 1200,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:09:00Z",
+        "receivedAt": "2026-01-15T12:09:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "summary": "Solicitud con estructura inválida",
+  "value": {
+    "type": "about:blank",
+    "title": "Solicitud inválida",
+    "status": 400,
+    "code": "INVALID_REQUEST"
+  }
+}

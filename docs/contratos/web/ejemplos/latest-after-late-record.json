@@ -1,0 +1,25 @@
+{
+  "summary": "Última lectura tras recibir un registro tardío",
+  "description": "Escenario aislado de RPM. El registro recibido a las 12:12 UTC ocurrió antes que la última lectura.",
+  "value": {
+    "asOf": "2026-01-15T12:13:00Z",
+    "items": [
+      {
+        "measurement": {
+          "recordId": "00000000-0000-4000-8000-000000000010",
+          "definitionId": "engine.rpm",
+          "value": 1200,
+          "unit": "rpm",
+          "quality": "VALID",
+          "occurredAt": "2026-01-15T12:09:00Z",
+          "receivedAt": "2026-01-15T12:09:05Z",
+          "context": {
+            "sourceId": "rpm-b",
+            "appliedConfigVersion": "cfg-b"
+          }
+        },
+        "freshness": "UNKNOWN"
+      }
+    ]
+  }
+}

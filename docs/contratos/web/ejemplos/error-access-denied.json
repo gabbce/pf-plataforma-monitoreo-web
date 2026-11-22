@@ -1,0 +1,9 @@
+{
+  "summary": "Acceso denegado sin datos de la máquina",
+  "value": {
+    "type": "about:blank",
+    "title": "Acceso denegado",
+    "status": 403,
+    "code": "ACCESS_DENIED"
+  }
+}

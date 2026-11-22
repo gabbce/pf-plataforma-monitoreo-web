@@ -1,0 +1,38 @@
+{
+  "summary": "Registro tardío con el contexto de su ocurrencia",
+  "description": "Consulta con definitionId=engine.rpm, from=2026-01-15T12:00:00Z, to=2026-01-15T12:10:00Z, page=1, size=5 y asOf=2026-01-15T12:13:00Z. Escenario aislado. El registro de las 12:04:30 conserva la fuente A y la configuración aplicada A, aunque se recibió después de la lectura con fuente B. Con un corte de las 12:13 UTC la confirmación de las 12:12:45 UTC ya es visible.",
+  "value": {
+    "asOf": "2026-01-15T12:13:00Z",
+    "page": 1,
+    "size": 5,
+    "total": 2,
+    "items": [
+      {
+        "recordId": "00000000-0000-4000-8000-000000000021",
+        "definitionId": "engine.rpm",
+        "value": 980,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:04:30Z",
+        "receivedAt": "2026-01-15T12:12:00Z",
+        "context": {
+          "sourceId": "rpm-a",
+          "appliedConfigVersion": "cfg-a"
+        }
+      },
+      {
+        "recordId": "00000000-0000-4000-8000-000000000010",
+        "definitionId": "engine.rpm",
+        "value": 1200,
+        "unit": "rpm",
+        "quality": "VALID",
+        "occurredAt": "2026-01-15T12:09:00Z",
+        "receivedAt": "2026-01-15T12:09:05Z",
+        "context": {
+          "sourceId": "rpm-b",
+          "appliedConfigVersion": "cfg-b"
+        }
+      }
+    ]
+  }
+}

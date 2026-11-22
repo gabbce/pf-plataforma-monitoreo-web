@@ -1,0 +1,9 @@
+{
+  "summary": "Token CSRF ausente, inválido o vencido",
+  "value": {
+    "type": "about:blank",
+    "title": "Solicitud rechazada",
+    "status": 403,
+    "code": "INVALID_CSRF"
+  }
+}

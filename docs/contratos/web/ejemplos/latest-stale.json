@@ -1,0 +1,41 @@
+{
+  "summary": "Lectura válida desactualizada",
+  "description": "Resultado ilustrativo de una regla de vigencia aplicable. Los instantes de este ejemplo no establecen un umbral.",
+  "value": {
+    "asOf": "2026-01-15T13:00:00Z",
+    "items": [
+      {
+        "measurement": {
+          "recordId": "00000000-0000-4000-8000-000000000010",
+          "definitionId": "engine.rpm",
+          "value": 1200,
+          "unit": "rpm",
+          "quality": "VALID",
+          "occurredAt": "2026-01-15T12:09:00Z",
+          "receivedAt": "2026-01-15T12:09:05Z",
+          "context": {
+            "sourceId": "rpm-b",
+            "appliedConfigVersion": "cfg-b"
+          }
+        },
+        "freshness": "STALE"
+      },
+      {
+        "measurement": {
+          "recordId": "00000000-0000-4000-8000-000000000020",
+          "definitionId": "engine.coolant_temperature",
+          "value": 55,
+          "unit": "°C",
+          "quality": "VALID",
+          "occurredAt": "2026-01-15T12:09:00Z",
+          "receivedAt": "2026-01-15T12:09:05Z",
+          "context": {
+            "sourceId": "coolant-a",
+            "appliedConfigVersion": "cfg-b"
+          }
+        },
+        "freshness": "STALE"
+      }
+    ]
+  }
+}

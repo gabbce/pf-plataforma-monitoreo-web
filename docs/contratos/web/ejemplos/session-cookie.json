@@ -1,0 +1,4 @@
+{
+  "summary": "Cookie de sesión ficticia en HTTPS",
+  "value": "PFC_SESSION=pfc-example-session; Path=/api/v1; Secure; HttpOnly; SameSite=Lax"
+}

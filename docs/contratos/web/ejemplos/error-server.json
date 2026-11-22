@@ -1,0 +1,9 @@
+{
+  "summary": "Error al completar la operación",
+  "value": {
+    "type": "about:blank",
+    "title": "No se pudo completar la operación",
+    "status": 500,
+    "code": "SERVER_ERROR"
+  }
+}
