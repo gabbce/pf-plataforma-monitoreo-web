@@ -136,6 +136,11 @@ El Wrapper instala la versión de Maven declarada por el proyecto. Los cuatro JA
 se generan dentro del directorio `target/` de su módulo. La guía detalla las
 versiones, los puertos y el arranque local. [Guía de la base Java](docs/base-java-p1-01-1.md)
 
+La [guía del backend](docs/guia-backend.md) describe cómo verificar el
+contrato web y sus ejemplos y cómo comprobar los recorridos de las API.
+Las [skills del backend](docs/skills-backend.md) son compartidas por el
+equipo en el repositorio.
+
 Para la web, usar Node.js 26.13.1 LTS y npm 12.2.3. Desde la raíz del repositorio:
 
 ```sh

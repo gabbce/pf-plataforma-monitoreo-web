@@ -1,0 +1,10 @@
+extends:
+  - minimal
+rules:
+  no-unresolved-refs: error
+  no-invalid-media-type-examples:
+    severity: error
+    # El esquema declara dónde se cierran los objetos. La regla no añade
+    # restricciones a las ramas condicionales que solo describen un campo.
+    allowAdditionalProperties: true
+  no-invalid-parameter-examples: error

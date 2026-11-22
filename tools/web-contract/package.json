@@ -1,0 +1,14 @@
+{
+  "name": "pfc-web-contract",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "verify": "node verify.mjs"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.82.0"
+  }
+}

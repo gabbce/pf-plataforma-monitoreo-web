@@ -60,6 +60,19 @@ Al iniciar un bloque que dependa del estado, alcance, requisitos o diseño del P
 - Úsalo para evaluar reutilización; sus decisiones no reemplazan las fuentes del PFC.
   Al fundamentar un análisis en ese código, identifica el commit consultado.
 
+## Skills del backend
+
+Codex descubre el catálogo compartido en [`.agents/skills/`](.agents/skills/)
+al abrir la raíz. Consulta la [guía de skills](docs/skills-backend.md) para
+seleccionar por tecnología y verificar compatibilidad y procedencia.
+
+- `pfc-fuentes` para localizar definiciones vigentes y criterios de aceptación.
+- `pfc-backend` para responsabilidades, autorización y contexto histórico.
+- `pfc-gateway` para cambios y pruebas de rutas WebFlux.
+- `pfc-station-sqlite` para persistencia y recuperación del auxiliar.
+- Para Java, Maven, Spring, bases de datos, Docker y OpenAPI, elige las
+  skills del stack según el catálogo.
+
 ## Implementación y validación
 
 - Desarrolla incrementalmente y con orientación al prototipado: primero un flujo
