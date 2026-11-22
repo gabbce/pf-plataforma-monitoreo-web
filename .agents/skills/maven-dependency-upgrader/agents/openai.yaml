@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maven Dependency Upgrader"
+  short_description: "Plan safe Maven dependency upgrades"
+  default_prompt: "Use $maven-dependency-upgrader to plan and validate this Maven dependency upgrade."

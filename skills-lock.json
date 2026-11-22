@@ -1,0 +1,320 @@
+{
+  "version": 2,
+  "skills": {
+    "110-java-maven-best-practices": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/110-java-maven-best-practices/SKILL.md",
+      "computedHash": "9870b504dac3aa42e9d4854ec8943c1a08dd1d3ea783f4ec4df415d9d63347ad",
+      "installMode": "copy"
+    },
+    "111-java-maven-dependencies": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/111-java-maven-dependencies/SKILL.md",
+      "computedHash": "13d052642256a14864893af521e8bed1df84a23402b18cd857e2be62aa23052d",
+      "installMode": "copy"
+    },
+    "112-java-maven-plugins": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/112-java-maven-plugins/SKILL.md",
+      "computedHash": "f03841b3d1654e70b2f7c8db4f74d05c2f2686f61c13809a7359db7133cebff4",
+      "installMode": "copy"
+    },
+    "114-java-maven-search": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/114-java-maven-search/SKILL.md",
+      "computedHash": "17d5677436a5381733c82c14b6c72c44dc5be1f3ddbe29d891ee3efef0a35fd4",
+      "installMode": "copy"
+    },
+    "141-java-refactoring-with-modern-features": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/141-java-refactoring-with-modern-features/SKILL.md",
+      "computedHash": "6ab31ce34aad788f2236c3fc278b375bcf03d245012211c92d74502133cd6e0f",
+      "installMode": "copy"
+    },
+    "315-frameworks-spring-mongodb": {
+      "source": "jabrena/plinth",
+      "ref": "0.19.0",
+      "commit": "6167e206e46246f0c933fdf071c9cbee5af79772",
+      "sourceType": "github",
+      "skillPath": "skills/315-frameworks-spring-mongodb/SKILL.md",
+      "computedHash": "e3516221c063428b14ebb3fc87b3b98fc7d8cbe556588017b629485f80660fa6",
+      "installMode": "copy"
+    },
+    "create-spring-boot-java-project": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/create-spring-boot-java-project/SKILL.md",
+      "computedHash": "83878017e8d4fc745271520f3c52c0985b69034eb1953c9df4e313b4845cd1d7",
+      "installMode": "copy"
+    },
+    "docker-build-strategies": {
+      "source": "docker/skills",
+      "ref": "v0.3.1",
+      "commit": "8afc2c6ef4e0ec2ea8e4ba024d0b884ea930b926",
+      "sourceType": "github",
+      "skillPath": "skills/docker-build-strategies/SKILL.md",
+      "computedHash": "f6376cf97e353c4ec469f3037486603e6ade3b4642f65fee14f389f9f0bbc613",
+      "installMode": "copy"
+    },
+    "docker-compose-patterns": {
+      "source": "docker/skills",
+      "ref": "v0.3.1",
+      "commit": "8afc2c6ef4e0ec2ea8e4ba024d0b884ea930b926",
+      "sourceType": "github",
+      "skillPath": "skills/docker-compose-patterns/SKILL.md",
+      "computedHash": "ab8353137a2f7054f113b7aa565eff12248bca7b41518a4d4183f7da522af2c3",
+      "installMode": "copy"
+    },
+    "docker-destructive-guardrails": {
+      "source": "docker/skills",
+      "ref": "v0.3.1",
+      "commit": "8afc2c6ef4e0ec2ea8e4ba024d0b884ea930b926",
+      "sourceType": "github",
+      "skillPath": "skills/docker-destructive-guardrails/SKILL.md",
+      "computedHash": "3a5445d2104a05d8f57b5f9fa7274e83c4e3c84571b7ff8aeecad304afeef016",
+      "installMode": "copy"
+    },
+    "docker-project-foundations": {
+      "source": "docker/skills",
+      "ref": "v0.3.1",
+      "commit": "8afc2c6ef4e0ec2ea8e4ba024d0b884ea930b926",
+      "sourceType": "github",
+      "skillPath": "skills/docker-project-foundations/SKILL.md",
+      "computedHash": "67b9b39419c68097af89fc5188bf1574a7cd925991ebf795b724da56804bf829",
+      "installMode": "copy"
+    },
+    "java-conventions": {
+      "source": "soujava/agent-skills",
+      "ref": "7e2201aa18d8bb5335479d87e9eea83aacf3bd26",
+      "commit": "7e2201aa18d8bb5335479d87e9eea83aacf3bd26",
+      "sourceType": "github",
+      "skillPath": "skills/java-conventions/SKILL.md",
+      "computedHash": "09e6d07dcd1185fac1aa764ea0b2d6476b30191891992be6b91049775c7043f6",
+      "installMode": "copy"
+    },
+    "java-debugging": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-debugging/SKILL.md",
+      "computedHash": "a40267248188b8ff2fad901974a0d181f327705d0c268c07284e96c9f8e8147b",
+      "installMode": "copy"
+    },
+    "java-development": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-development/SKILL.md",
+      "computedHash": "4483793e527ee42df798795a85a969ef6e33cb4744794743777bfd67f77a1001",
+      "installMode": "copy"
+    },
+    "java-diagnostics": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-diagnostics/SKILL.md",
+      "computedHash": "e1ad2b120c9bdcf45f05be6afd99c8805046bd6de32f0df3661bcf3c6753f862",
+      "installMode": "copy"
+    },
+    "java-junit": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-junit/SKILL.md",
+      "computedHash": "53d2be39e3fe25b0d3b5f2aa5fee78689b8e1c63d31bb96150190d31429b60fd",
+      "installMode": "copy"
+    },
+    "java-springboot": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-springboot/SKILL.md",
+      "computedHash": "7a3a5343773c126e788966041eca919180e3347f01b66d5dea8dd9923cafd897",
+      "installMode": "copy"
+    },
+    "java-testcontainers": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-testcontainers/SKILL.md",
+      "computedHash": "9422e6aef4f4e8ae375e62e8539b6442c8cf0380d6ee4fd18fdfdb5f4d41e367",
+      "installMode": "copy"
+    },
+    "java-upgrade": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/java-upgrade/SKILL.md",
+      "computedHash": "8907a85fe9e4a16f12592e7fb689d63dc79d644b1d27d998da2214ff72d598f4",
+      "installMode": "copy"
+    },
+    "maven-dependency-upgrader": {
+      "source": "Jiangxianze/spring-agent-skills",
+      "ref": "f228731681cc37e6abd83058a4d2a6311eba994f",
+      "commit": "f228731681cc37e6abd83058a4d2a6311eba994f",
+      "sourceType": "github",
+      "skillPath": "skills/maven-dependency-upgrader/SKILL.md",
+      "computedHash": "5be357c92a93a0ea4ea36f28e2525c4811667d63c3eca69849def97e6873012c",
+      "installMode": "copy"
+    },
+    "mongodb-connection": {
+      "source": "mongodb/agent-skills",
+      "ref": "v1.2.1",
+      "commit": "6ebabd86ebdbe85f37082e9a7d37e18ebf6ebba0",
+      "sourceType": "github",
+      "skillPath": "skills/mongodb-connection/SKILL.md",
+      "computedHash": "8b4db1c223dc712aedb54e6e44bd037f67a65374b60de3bad4abc1efa95bd608",
+      "installMode": "copy"
+    },
+    "mongodb-query-optimizer": {
+      "source": "mongodb/agent-skills",
+      "ref": "v1.2.1",
+      "commit": "6ebabd86ebdbe85f37082e9a7d37e18ebf6ebba0",
+      "sourceType": "github",
+      "skillPath": "skills/mongodb-query-optimizer/SKILL.md",
+      "computedHash": "5fd3371f2fa6804afcee935e227536bd06a649d2c7b339c711e4799ebd16dcd9",
+      "installMode": "copy"
+    },
+    "openapi-spec-generation": {
+      "source": "wshobson/agents",
+      "ref": "91ff75307f5668916f3eb77d5ba556266c961376",
+      "commit": "91ff75307f5668916f3eb77d5ba556266c961376",
+      "sourceType": "github",
+      "skillPath": "plugins/documentation-generation/skills/openapi-spec-generation/SKILL.md",
+      "computedHash": "7d034b06630d89c13d4ac440529eb1832ac8643beddb62ba68fc05324e0a21f1",
+      "installMode": "copy"
+    },
+    "openapi-to-application-java-spring-boot": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/openapi-to-application-java-spring-boot/SKILL.md",
+      "computedHash": "fca3af934ec9cc4176030e3f28b6dac301ec612735d474548b5ff11fda1fad75",
+      "installMode": "copy"
+    },
+    "postgresql-optimization": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/postgresql-optimization/SKILL.md",
+      "computedHash": "b28b67b9111cffa917cf4bffce56a1f37003ae08a1de79c302f297d38de2555d",
+      "installMode": "copy"
+    },
+    "postgresql-table-design": {
+      "source": "wshobson/agents",
+      "ref": "91ff75307f5668916f3eb77d5ba556266c961376",
+      "commit": "91ff75307f5668916f3eb77d5ba556266c961376",
+      "sourceType": "github",
+      "skillPath": "plugins/database-design/skills/postgresql-table-design/SKILL.md",
+      "computedHash": "c2d9f4b5037b4320be0cc2489eeb287d3147477ae1f48b33f5f897e2c562ed06",
+      "installMode": "copy"
+    },
+    "spring-boot-failure-analyzer": {
+      "source": "Jiangxianze/spring-agent-skills",
+      "ref": "f228731681cc37e6abd83058a4d2a6311eba994f",
+      "commit": "f228731681cc37e6abd83058a4d2a6311eba994f",
+      "sourceType": "github",
+      "skillPath": "skills/spring-boot-failure-analyzer/SKILL.md",
+      "computedHash": "03c9119d7b4afd2ae5c135c8abe433f636421020b7796f1245558a9d9d47b700",
+      "installMode": "copy"
+    },
+    "spring-boot-testing": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/spring-boot-testing/SKILL.md",
+      "computedHash": "00b15f274b55e37a903c037e9919c359c703d26a7f474017febde24025079c23",
+      "installMode": "copy"
+    },
+    "spring-observability": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/spring-observability/SKILL.md",
+      "computedHash": "ae365558cd6c33816e7dd2fdd00c456291415db0087e705aeed8602d6197eac2",
+      "installMode": "copy"
+    },
+    "spring-security": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/spring-security/SKILL.md",
+      "computedHash": "c1fa8c28347cfc1c8bc5449b08ec4a101bbe8ca5e075ac3b647f6f0b9213f7dd",
+      "installMode": "copy"
+    },
+    "spring-security-testing": {
+      "source": "spring-ai-community/spring-testing-skills",
+      "ref": "v1.1.0",
+      "commit": "eaa61bf86929a4d636b6b971e693b798f749cdbf",
+      "sourceType": "github",
+      "skillPath": "skills/spring-security-testing/SKILL.md",
+      "computedHash": "f074d40714b2b0f9d9433477bcb23944a728c0015071ba5e49f3f8c6b47540fd",
+      "installMode": "copy"
+    },
+    "spring-webflux-testing": {
+      "source": "spring-ai-community/spring-testing-skills",
+      "ref": "v1.1.0",
+      "commit": "eaa61bf86929a4d636b6b971e693b798f749cdbf",
+      "sourceType": "github",
+      "skillPath": "skills/spring-webflux-testing/SKILL.md",
+      "computedHash": "ac090f4d457f85ab3daf9d38dc0dd7b45cfc0285f43955d805c8ad37b308414c",
+      "installMode": "copy"
+    },
+    "sql-code-review": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/sql-code-review/SKILL.md",
+      "computedHash": "843182cd2360bbcfd6b6d96e465681a6744e85ccc6c61e85637911218fca200b",
+      "installMode": "copy"
+    },
+    "sql-optimization": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/sql-optimization/SKILL.md",
+      "computedHash": "10e2d74196b0ec10a4eb64e31d75f2fe1f2aecdf04310421c543a8a22dbdee5c",
+      "installMode": "copy"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "ref": "v0.1.9",
+      "commit": "544bfc56c89afe2b87b20017a59b2c6e9502a1fb",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "3eb972c2d7c818e544e35cc33ea8d7147d4d78ae08142ef40037b0fbac7a2505",
+      "installMode": "copy"
+    }
+  }
+}

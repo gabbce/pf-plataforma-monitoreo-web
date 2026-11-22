@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot Failure Analyzer"
+  short_description: "Diagnose Spring Boot startup failures"
+  default_prompt: "Use $spring-boot-failure-analyzer to diagnose this Spring Boot startup failure and propose the smallest verified fix."
