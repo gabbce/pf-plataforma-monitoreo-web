@@ -52,3 +52,20 @@ El build comprueba los tipos y genera los archivos estáticos en `dist/`.
 `index.html` contiene el elemento raíz que monta React desde `src/main.tsx`.
 `src/App.tsx` define la vista inicial. `src/index.css` importa Tailwind CSS,
 que se integra en el build mediante `@tailwindcss/vite` en `vite.config.ts`.
+## Base de componentes Canavesio
+
+`components.json` configura shadcn/ui con Radix. Los componentes generados
+están en `src/components/ui/` y los tokens del tema en `src/index.css`.
+La tipografía Inter se sirve localmente. Para incorporar un componente,
+ejecuta desde `frontend/`:
+
+```sh
+npx shadcn@4.23.0 add <componente>
+```
+
+La pantalla inicial de esta etapa reúne el selector, el panel de lectura y
+los gráficos de las dos variables del contrato. Usa los
+[ejemplos versionados](../docs/contratos/web/ejemplos/). Agrega
+`?scenario=quality` a la URL local para revisar una lectura RPM inválida.
+Usa `?scenario=gap` para simular una ausencia intermedia de temperatura.
+Cada variante deriva de los ejemplos y conserva los registros originales.

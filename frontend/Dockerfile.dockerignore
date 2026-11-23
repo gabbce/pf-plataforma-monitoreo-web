@@ -7,6 +7,13 @@
 !frontend/tsconfig*.json
 !frontend/src/
 !frontend/src/**
+!brand/canavesio-logo.svg
+!docs/contratos/web/ejemplos/history-coolant.json
+!docs/contratos/web/ejemplos/history-rpm-page-1.json
+!docs/contratos/web/ejemplos/history-rpm-page-2.json
+!docs/contratos/web/ejemplos/latest-invalid.json
+!docs/contratos/web/ejemplos/latest-normal.json
+!docs/contratos/web/ejemplos/machine-detail.json
 !infrastructure/
 !infrastructure/platform/
 !infrastructure/platform/nginx.conf
