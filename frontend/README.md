@@ -3,6 +3,9 @@
 La aplicación web se inicializó con create-vite 9.3.4 y la plantilla oficial
 React con TypeScript. La base incluye acceso, máquinas autorizadas,
 detalle de máquina e histórico en el modo local de escenarios.
+Consulta la [guía del frontend](../docs/guia-frontend.md) para recorrer
+las vistas, verificar la base y mantener sus componentes y referencias.
+
 [P1-01.2](https://github.com/gabbce/pf-plataforma-monitoreo-web/issues/9)
 
 ## Diseño de interfaz del Prototipo 1
@@ -20,9 +23,8 @@ reúne las variantes de escritorio, tablet y móvil y los estados alternativos.
 - Node.js 26.13.1 LTS, indicado en `.nvmrc`.
 - npm 12.2.3, declarado en `package.json`.
 
-Las dependencias directas tienen versiones exactas en `package.json`.
-Conservar `package-lock.json` para instalar la misma resolución de dependencias
-con `npm ci`.
+`package.json` declara las dependencias y `package-lock.json` fija las
+versiones resueltas. Conserva el lockfile e instala con `npm ci`.
 
 ## Desarrollo y compilación
 
@@ -59,20 +61,20 @@ que se integra en el build mediante `@tailwindcss/vite` en `vite.config.ts`.
 `components.json` configura shadcn/ui con Radix. Los componentes generados
 están en `src/components/ui/` y los tokens del tema en `src/index.css`.
 La tipografía Inter se sirve localmente. Para incorporar un componente,
-ejecuta desde `frontend/`:
+ejecuta la CLI desde `frontend/`.
 
 ```sh
-npx shadcn@4.23.0 add <componente>
+npx --no-install shadcn add <componente>
 ```
 
 ## Escenarios locales
 
 Para recorrer las cuatro vistas con los
-[ejemplos del contrato web](../docs/contratos/web/ejemplos/), inicia Vite en
-modo de escenarios:
+[ejemplos del contrato web](../docs/contratos/web/ejemplos/), inicia Vite
+desde la raíz en modo de escenarios.
 
 ```sh
-npm run dev -- --mode escenarios
+npm --prefix frontend run dev -- --mode escenarios
 ```
 
 Usa el identificador y la contraseña ficticios de
@@ -99,5 +101,5 @@ de estas variantes antes del fragmento `#` de la URL.
 | `late` | El histórico incluye una medición recibida después de su ocurrencia. |
 
 Para observar una consulta sin resultados, usa un intervalo anterior al
-15/01/2026. Para contrastar archivos compilados localmente, ejecuta
-`npm run build -- --mode escenarios` y luego `npm run preview`.
+15/01/2026. La [guía del frontend](../docs/guia-frontend.md#instalar-y-ejecutar)
+explica cómo previsualizar el build de escenarios por separado del estándar.

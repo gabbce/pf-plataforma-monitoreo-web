@@ -141,19 +141,17 @@ contrato web y sus ejemplos y cómo comprobar los recorridos de las API.
 Las [skills del backend](docs/skills-backend.md) son compartidas por el
 equipo en el repositorio.
 
-Para la web, usar Node.js 26.13.1 LTS y npm 12.2.3. Desde la raíz del repositorio:
+Instala e inicia la interfaz desde la raíz con Node.js 26.13.1 LTS y npm 12.2.3.
 
 ```sh
-cd frontend
-npm ci
-npm run typecheck
-npm run lint
-npm run build
+npm --prefix frontend ci
+npm --prefix frontend run dev -- --mode escenarios
 ```
 
-El build genera el sitio estático en `frontend/dist/`. La guía explica la
-selección de Node y el arranque en desarrollo o en modo de vista previa.
-[Guía de la base web](frontend/README.md)
+El [README del frontend](frontend/README.md) describe el entorno local.
+La [guía del frontend](docs/guia-frontend.md) describe cómo compilar la
+base, recorrer las cuatro vistas con escenarios y verificar su
+correspondencia con el diseño aprobado.
 
 ### Entorno Docker de desarrollo
 
