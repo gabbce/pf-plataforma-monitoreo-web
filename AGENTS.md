@@ -171,6 +171,12 @@ versiones y fuentes del catálogo compartido.
   operativo. El Cronograma ajustado permanece congelado y no se actualiza con el
   avance de las cards.
 
+## Commits
+
+- Usa [Conventional Commits 1.0.0](https://www.conventionalcommits.org/es/v1.0.0/)
+  para los mensajes de commit. Inicia el título con el tipo que corresponda al
+  cambio, como en `feat: inicializar el catálogo de Gestión`.
+
 ## Idioma
 
 - Escribe los mensajes de commit y la documentación en español, incluidos los nombres
