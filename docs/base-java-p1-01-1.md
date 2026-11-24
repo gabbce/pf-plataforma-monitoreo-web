@@ -48,13 +48,16 @@ El auxiliar mantiene su propio módulo de aplicación dentro del mismo build.
 Desde la raíz del repositorio, con JDK 25 configurado en Linux o WSL. La
 versión de referencia es Eclipse Temurin 25.0.5.1+2. Configurar `JAVA_HOME`
 y agregar `$JAVA_HOME/bin` al inicio de `PATH` para usar el mismo JDK al
-compilar y ejecutar los JAR.
+compilar y ejecutar los JAR. Las pruebas de integración de Gestión ejecutadas
+por `verify` requieren Docker.
 
 ```sh
 ./mvnw clean verify
 ```
 
-Para iniciar las aplicaciones, ejecutar cada comando en una terminal distinta:
+Para iniciar las aplicaciones, ejecutar cada comando en una terminal distinta.
+Gestión requiere una base PostgreSQL aprovisionada y las variables de conexión del
+[entorno central](../infrastructure/platform/README.md#gestión-y-postgresql).
 
 ```sh
 java -jar backend/management/target/management-0.0.1-SNAPSHOT.jar

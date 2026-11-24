@@ -12,14 +12,16 @@ base y de bases de datos se fijan por versión y digest.
 | Gateway | `gateway:8080` | |
 | NGINX con el frontend | `nginx:80` | |
 | PostgreSQL 19.0 de Gestión | `postgres:5432` | `postgres_data` |
+| Provisión de PostgreSQL para Gestión | Proceso de ejecución única | |
 | MongoDB 9.0.8 de Registros | `mongodb:27017` | `mongo_data` y `mongo_config` |
 
-Gestión y Registros arrancan tras la comprobación de disponibilidad de su
-base. NGINX es el único servicio con un puerto publicado. Escucha en el host
+Gestión y Registros esperan que su base esté disponible. Gestión también espera
+que termine la provisión de su rol y esquema. NGINX es el único servicio con un puerto publicado. Escucha en el host
 en `127.0.0.1:8095` y se conecta tanto a la red de entrada como a la privada.
 El [auxiliar](../auxiliary/README.md) conserva su propia red y usa la publicación
 de NGINX a través del host en Docker Desktop. El resto del central solo usa su
-red interna.
+red interna. Solo Gestión y su proceso de provisión comparten con PostgreSQL
+la red privada `management-db`.
 
 NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
 Gateway. Gateway conserva el método, la ruta y los parámetros. Reenvía
@@ -41,14 +43,62 @@ OpenSSL. El resguardo cifrado requiere GnuPG.
 ./infrastructure/platform/prepare-local-config.sh
 ```
 
-El script genera las contraseñas de inicialización si faltan y conserva
-las existentes. Los archivos de las contraseñas usan modo `0444` dentro del
+El script genera las contraseñas de inicialización de PostgreSQL y MongoDB y
+la contraseña de Gestión si faltan. Conserva los archivos existentes. Los archivos de las contraseñas usan modo `0444` dentro del
 directorio `0700` para que cada imagen de base pueda leer su secreto montado
 en solo lectura después de bajar privilegios.
 
 Abrir `http://localhost:8095/` desde el host Docker. Esta entrada HTTP
 corresponde al entorno de desarrollo local. El despliegue de la demo y la
 conexión de Stations externas requieren HTTPS.
+
+## Gestión y PostgreSQL
+
+El servicio `provision-management` usa la contraseña administrativa de
+PostgreSQL para preparar el rol `management_app`, propietario del esquema
+`management`, e instalar `btree_gist` en `public`. Verifica la conexión por
+SCRAM, los propietarios y los privilegios. El contenedor de Gestión recibe
+solo su propia contraseña y ejecuta las migraciones Flyway al arrancar.
+
+Para un volumen previo al aprovisionamiento, volver a ejecutar
+`prepare-local-config.sh` y arrancar el central con los archivos y el volumen
+existentes. Si el rol ya existe, conservar la contraseña que se usó al crearlo.
+La provisión detecta inconsistencias y se detiene. Para diagnosticar el proceso:
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml logs provision-management
+```
+
+Para ejecutar el JAR fuera de Compose, configurar `SPRING_DATASOURCE_URL` con
+la URL JDBC de la base `management` aprovisionada y accesible desde ese proceso,
+`SPRING_DATASOURCE_USERNAME=management_app` y `SPRING_DATASOURCE_PASSWORD` con
+el valor de su secreto. El Compose central mantiene PostgreSQL en su red privada.
+
+El arranque habitual crea el esquema de tablas mediante Flyway. Cargar por
+separado la máquina ficticia y el catálogo de demostración después de arrancar
+el central:
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml run --rm management load-demo-fixture
+```
+
+Para un JAR con las variables de conexión ya configuradas:
+
+```sh
+java -jar backend/management/target/management-0.0.1-SNAPSHOT.jar load-demo-fixture
+```
+
+El comando usa un proceso sin servidor HTTP. Carga el chasis textual `000123`
+y asocia `engine.rpm` con `rpm-b` y `engine.coolant_temperature` con `coolant-a`
+desde el 15/01/2026 a las 12:00 UTC. La transacción audita cada alta efectiva.
+La repetición idéntica conserva filas y auditoría. Si encuentra una fila
+incompatible, revierte la carga.
+
+Para ejecutar las pruebas de Gestión con Docker disponible, usar
+`./mvnw -pl backend/management -am verify`. Las pruebas de integración usan
+la imagen PostgreSQL fijada por digest y una base separada para el cambio de
+vigencia a las 12:05 UTC. Flyway 12.11.0 advierte que PostgreSQL 19 supera su
+última versión verificada, PostgreSQL 18.
 
 ## Resguardo de configuración
 
@@ -83,7 +133,7 @@ volúmenes ya inicializados.
 )
 ```
 
-Este resguardo contiene las contraseñas de inicialización. El respaldo de datos
+Este resguardo contiene las contraseñas de inicialización y la de Gestión. El respaldo de datos
 de PostgreSQL, MongoDB y SQLite requiere su propia operación.
 
 ## Construcción, arranque y diagnóstico

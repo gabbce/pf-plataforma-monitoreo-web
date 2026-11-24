@@ -126,7 +126,8 @@ cd pf-plataforma-monitoreo-web
 ### Compilación y comprobaciones locales
 
 Para Java, configurar un JDK 25 LTS en `JAVA_HOME` y agregar
-`$JAVA_HOME/bin` al inicio de `PATH`. Desde la raíz del repositorio:
+`$JAVA_HOME/bin` al inicio de `PATH`. Tener Docker disponible para las pruebas de
+integración de Gestión. Desde la raíz del repositorio:
 
 ```sh
 ./mvnw clean verify
