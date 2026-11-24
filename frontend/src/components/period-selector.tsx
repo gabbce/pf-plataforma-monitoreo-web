@@ -28,7 +28,7 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
 
   return (
     <Select value={String(value)} onValueChange={selectPeriod}>
-      <SelectTrigger aria-label="Período de tendencias" className="min-h-11 w-54 max-w-full">
+      <SelectTrigger aria-label="Período de tendencias" className="min-h-11 w-45 max-w-full md:w-54">
         <SelectValue />
       </SelectTrigger>
       <SelectContent position="popper" align="start" side="bottom" sideOffset={4} className="w-(--radix-select-trigger-width)">
