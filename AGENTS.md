@@ -73,6 +73,17 @@ seleccionar por tecnología y verificar compatibilidad y procedencia.
 - Para Java, Maven, Spring, bases de datos, Docker y OpenAPI, elige las
   skills del stack según el catálogo.
 
+## Skills del frontend
+
+La [guía de skills frontend](docs/skills-frontend.md) identifica los usos,
+versiones y fuentes del catálogo compartido.
+
+- `pfc-diseno` para criterios de interfaz, Figma y recursos de marca.
+- `pfc-frontend` para contrato web, escenarios y convenciones de interfaz.
+- `pfc-graficos` para Recharts, selección de muestras, calidad y coherencia temporal.
+- Consulta el catálogo para shadcn/Radix, React, TypeScript, Vite, Tailwind,
+  accesibilidad y pruebas de navegador.
+
 ## Implementación y validación
 
 - Desarrolla incrementalmente y con orientación al prototipado: primero un flujo

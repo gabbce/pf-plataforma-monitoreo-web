@@ -315,6 +315,78 @@
       "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
       "computedHash": "3eb972c2d7c818e544e35cc33ea8d7147d4d78ae08142ef40037b0fbac7a2505",
       "installMode": "copy"
+    },
+    "vite": {
+      "source": "antfu/skills",
+      "ref": "4a6bb39e7b45e26402eb215393c51ccf5df1ca4c",
+      "commit": "4a6bb39e7b45e26402eb215393c51ccf5df1ca4c",
+      "sourceType": "github",
+      "skillPath": "skills/vite/SKILL.md",
+      "computedHash": "db9eea82d8bf6ce0f60a4a1d94a626c718df7d97160b5f1d5b150647e0c401b3",
+      "installMode": "copy"
+    },
+    "playwright-generate-test": {
+      "source": "github/awesome-copilot",
+      "ref": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "commit": "f10fdb8b2660ce85c98f220b2f1ca24653768a5c",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-generate-test/SKILL.md",
+      "computedHash": "eb31a06952f1e0ba2edfe075be31b490b1859f0d47fe1b9930a69225055febbf",
+      "installMode": "copy"
+    },
+    "tailwind-css": {
+      "source": "PaulRBerg/agent-skills",
+      "ref": "3de4c43c07b14738e0cbf1a9d3ba12809d1758ab",
+      "commit": "3de4c43c07b14738e0cbf1a9d3ba12809d1758ab",
+      "sourceType": "github",
+      "skillPath": "skills/tailwind-css/SKILL.md",
+      "computedHash": "7a37d65613671a0c404ea0334355d8c67b29a2c992dda2da62716ff82fe16819",
+      "installMode": "copy"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "ref": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "f711ed8b16162eaa712abbcdbbae6c926f86c57e60127735fecc3ad0dd85b3fa",
+      "installMode": "copy"
+    },
+    "screen-reader-testing": {
+      "source": "wshobson/agents",
+      "ref": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "commit": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "sourceType": "github",
+      "skillPath": "plugins/accessibility-compliance/skills/screen-reader-testing/SKILL.md",
+      "computedHash": "79c2a7b6ffc5ece8d550b9406f6817cf69d17dfb14fe4b88179ef740643d4c60",
+      "installMode": "copy"
+    },
+    "typescript-advanced-types": {
+      "source": "wshobson/agents",
+      "ref": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "commit": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "sourceType": "github",
+      "skillPath": "plugins/javascript-typescript/skills/typescript-advanced-types/SKILL.md",
+      "computedHash": "34c5b3863fde1fc85981ac583ecaf0140471b374d0b7002ac5bc0bea2cf38b24",
+      "installMode": "copy"
+    },
+    "wcag-audit-patterns": {
+      "source": "wshobson/agents",
+      "ref": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "commit": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "sourceType": "github",
+      "skillPath": "plugins/accessibility-compliance/skills/wcag-audit-patterns/SKILL.md",
+      "computedHash": "66fe98ef98ec39d6ecf5920d02b9ed01b0e3c3be9e0eb0bfcfdae9ee220e0cb1",
+      "installMode": "copy"
+    },
+    "tailwind-design-system": {
+      "source": "wshobson/agents",
+      "ref": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "commit": "34e50fee32114afd9475f25d81492712f08cb71c",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-mobile-development/skills/tailwind-design-system/SKILL.md",
+      "computedHash": "c807f0c9619e8c389879f55846c2e395956f1073ab6d01a93fbb30b340015ab1",
+      "installMode": "copy"
     }
   }
 }

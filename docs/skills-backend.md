@@ -162,9 +162,8 @@ repositorio. Su revisión es el commit de Git que las contiene.
 
 ## Restauración y actualización
 
-Un clon de la rama contiene las skills y sus recursos. El
-[lock](../skills-lock.json) fija el commit y el hash de las 35 copias externas
-sin cambios. Git restaura las tres adaptaciones y las cuatro skills propias
+Un clon de la rama contiene las skills y sus recursos. El [lock compartido](../skills-lock.json) fija el commit y el hash de las 35
+copias externas del backend sin cambios. Git restaura las tres adaptaciones y las cuatro skills propias
 junto con el resto del repositorio.
 
 Si faltan archivos de las copias externas fijadas en el lock, ejecuta este
