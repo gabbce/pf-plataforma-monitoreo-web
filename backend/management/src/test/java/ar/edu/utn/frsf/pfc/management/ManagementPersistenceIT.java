@@ -50,7 +50,7 @@ class ManagementPersistenceIT {
     void clearFixture() {
         jdbc.sql("""
                 TRUNCATE machine_type, machine_instance, subsystem_definition, record_definition, data_definition,
-                         data_source, data_source_binding, audit_record RESTART IDENTITY
+                         data_source, data_source_binding, web_machine_association, audit_record RESTART IDENTITY
                 """).update();
     }
 

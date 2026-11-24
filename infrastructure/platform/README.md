@@ -24,7 +24,8 @@ red interna. Solo Gestión y su proceso de provisión comparten con PostgreSQL
 la red privada `management-db`.
 
 NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
-Gateway. Gateway conserva el método, la ruta y los parámetros. Reenvía
+Gateway. Gateway conserva el método, la ruta y los parámetros. Las rutas web
+de ingreso, listado y detalle de máquinas llegan a Gestión. Gateway reenvía
 `POST /integration/v1/records` a Registros y
 `GET /integration/v1/configuration` y
 `POST /integration/v1/configuration-results` a Gestión. Los servicios de
@@ -93,6 +94,52 @@ y asocia `engine.rpm` con `rpm-b` y `engine.coolant_temperature` con `coolant-a`
 desde el 15/01/2026 a las 12:00 UTC. La transacción audita cada alta efectiva.
 La repetición idéntica conserva filas y auditoría. Si encuentra una fila
 incompatible, revierte la carga.
+
+### Acceso web de demostración
+
+Gestión guarda las cuentas y sus permisos en su PostgreSQL privado. Cargar
+las cuentas después del catálogo, desde Bash. Ingresar contraseñas de
+demostración propias cuando se soliciten y conservarlas fuera del
+repositorio y de las imágenes.
+
+| Identificador | Acceso a máquinas | Variable de contraseña |
+|---|---|---|
+| `tecnico-ejemplo` | Servicio Técnico con alcance global | `PFC_DEMO_TECHNICIAN_PASSWORD` |
+| `propietario-ejemplo` | Propietario de `000123` desde el 15/01/2026 a las 12:00 UTC | `PFC_DEMO_OWNER_PASSWORD` |
+| `propietario-sin-asociacion` | Propietario con listado vacío | `PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD` |
+
+```bash
+read -rs -p 'Contraseña de Servicio Técnico: ' PFC_DEMO_TECHNICIAN_PASSWORD
+printf '\n'
+read -rs -p 'Contraseña del Propietario asociado: ' PFC_DEMO_OWNER_PASSWORD
+printf '\n'
+read -rs -p 'Contraseña del Propietario sin asociación: ' PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD
+printf '\n'
+export PFC_DEMO_TECHNICIAN_PASSWORD PFC_DEMO_OWNER_PASSWORD PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD
+docker compose -f infrastructure/platform/compose.yaml run --rm \
+  -e PFC_DEMO_TECHNICIAN_PASSWORD -e PFC_DEMO_OWNER_PASSWORD \
+  -e PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD management load-demo-web-accounts
+unset PFC_DEMO_TECHNICIAN_PASSWORD PFC_DEMO_OWNER_PASSWORD PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD
+```
+
+Las contraseñas admiten hasta 72 bytes UTF-8 y deben contener algún carácter
+distinto de espacio en blanco. El comando registra las altas efectivas y
+verifica el estado y los hashes de las cuentas existentes. Una repetición con
+las mismas contraseñas y datos conserva el contenido y la auditoría. Una
+colisión revierte la carga. Para cargar desde un JAR con las variables de
+conexión y contraseñas ya exportadas, ejecutar
+`java -jar backend/management/target/management-0.0.1-SNAPSHOT.jar load-demo-web-accounts`.
+
+El cliente solicita `GET /api/v1/auth/csrf` y envía la cookie del contexto y
+el token en `X-CSRF-TOKEN` al hacer `POST /api/v1/auth/session`. Al ingresar,
+Gestión consume el contexto y establece una cookie nueva `PFC_SESSION`. Las
+cookies usan `Secure`, `HttpOnly`, `SameSite=Lax` y `Path=/api/v1`. Usar el
+host `localhost` para las verificaciones HTTP locales y HTTPS en la demo.
+El contexto previo vence a los 5 minutos y la sesión a los 30 minutos del
+ingreso. Son valores del P1 configurables en el entorno del proceso de Gestión
+mediante `PFC_WEB_CSRF_TTL` y `PFC_WEB_SESSION_TTL`. La API resuelve el
+permiso y la asociación vigentes en cada consulta. El campo
+`lastAuthenticatedContactAt` se devuelve como `null` en este paso.
 
 Para ejecutar las pruebas de Gestión con Docker disponible, usar
 `./mvnw -pl backend/management -am verify`. Las pruebas de integración usan

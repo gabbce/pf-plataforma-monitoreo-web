@@ -8,6 +8,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterAll;
@@ -54,12 +56,96 @@ class ApiGatewayRoutingTests {
     }
 
     @Test
+    void routesWebReadsToManagementWithoutChangingTheirPaths() throws Exception {
+        assertRouted("GET", "/api/v1/auth/csrf", "management");
+        assertRouted("GET", "/api/v1/machines", "management");
+        assertRouted("GET", "/api/v1/machines/000123", "management");
+    }
+
+    @Test
+    void forwardsTheLoginRequestAndSessionCookie() throws Exception {
+        String path = "/api/v1/auth/session";
+        String loginBody = "{\"identifier\":\"reader\",\"password\":\"example\"}";
+        String preAuthCookie = "PFC_PRE_AUTH=context";
+        String csrfToken = "test-csrf-token";
+        String sessionCookie = "PFC_SESSION=session; Path=/api/v1; Secure; HttpOnly; SameSite=Lax";
+        var forwarded = new CompletableFuture<ForwardedLogin>();
+        management.createContext(path, exchange -> {
+            try (exchange) {
+                var headers = exchange.getRequestHeaders();
+                forwarded.complete(new ForwardedLogin(exchange.getRequestMethod(), exchange.getRequestURI().toString(),
+                        headers.getFirst("Cookie"), headers.getFirst("X-CSRF-TOKEN"), headers.getFirst("Content-Type"),
+                        new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
+                exchange.getResponseHeaders().add("Set-Cookie", sessionCookie);
+                exchange.getResponseHeaders().add("Cache-Control", "no-store");
+                exchange.sendResponseHeaders(204, -1);
+            }
+        });
+
+        var response = send(request(path)
+                .header("Cookie", preAuthCookie)
+                .header("X-CSRF-TOKEN", csrfToken)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(loginBody))
+                .build());
+
+        assertThat(forwarded.get(5, TimeUnit.SECONDS)).isEqualTo(new ForwardedLogin(
+                "POST", path, preAuthCookie, csrfToken, "application/json", loginBody));
+        assertThat(response.statusCode()).isEqualTo(204);
+        assertThat(response.headers().allValues("Set-Cookie")).containsExactly(sessionCookie);
+        assertThat(response.headers().allValues("Cache-Control")).containsExactly("no-store");
+    }
+
+    @Test
+    void forwardsManagementSessionChallenge() throws Exception {
+        String path = "/api/v1/machines/000999";
+        String challenge = "Session realm=\"PFC\"";
+        String problem = "{\"type\":\"about:blank\",\"title\":\"Session required\","
+                + "\"status\":401,\"code\":\"SESSION_REQUIRED\"}";
+        management.createContext(path, exchange -> {
+            try (exchange) {
+                exchange.getResponseHeaders().add("WWW-Authenticate", challenge);
+                exchange.getResponseHeaders().add("Cache-Control", "no-store");
+                exchange.getResponseHeaders().add("Content-Type", "application/problem+json");
+                var payload = problem.getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(401, payload.length);
+                exchange.getResponseBody().write(payload);
+            }
+        });
+
+        var response = send("GET", path);
+
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().allValues("WWW-Authenticate")).containsExactly(challenge);
+        assertThat(response.headers().allValues("Cache-Control")).containsExactly("no-store");
+        assertThat(response.headers().allValues("Content-Type")).containsExactly("application/problem+json");
+        assertThat(response.body()).isEqualTo(problem);
+    }
+
+    @Test
     void rejectsUnconfiguredMethodsAndPaths() throws Exception {
-        assertThat(send("GET", "/integration/v1/records").statusCode()).isEqualTo(404);
-        assertThat(send("POST", "/integration/v1/configuration").statusCode()).isEqualTo(404);
-        assertThat(send("POST", "/integration/v1/configuration-results/extra").statusCode()).isEqualTo(404);
-        assertThat(send("POST", "/integration/v1/records/").statusCode()).isEqualTo(404);
-        assertThat(send("GET", "/api/unknown").statusCode()).isEqualTo(404);
+        assertNotRouted("GET", "/integration/v1/records");
+        assertNotRouted("POST", "/integration/v1/configuration");
+        assertNotRouted("POST", "/integration/v1/configuration-results/extra");
+        assertNotRouted("POST", "/integration/v1/records/");
+        assertNotRouted("GET", "/api/unknown");
+    }
+
+    @Test
+    void rejectsOtherWebMethodsAndPaths() throws Exception {
+        assertNotRouted("POST", "/api/v1/auth/csrf");
+        assertNotRouted("GET", "/api/v1/auth/session");
+        assertNotRouted("POST", "/api/v1/machines");
+        assertNotRouted("HEAD", "/api/v1/machines/000123");
+        assertNotRouted("GET", "/api/v1/auth/csrf/");
+        assertNotRouted("POST", "/api/v1/auth/session/extra");
+        assertNotRouted("GET", "/api/v1/machines/");
+        assertNotRouted("GET", "/api/v1/machines/000123/");
+        assertNotRouted("GET", "/api/v1/machines/000123/measurements/latest");
+        assertNotRouted("GET", "/api/v1/machines/000123/measurements/history");
+        assertNotRouted("GET", "/api/v1/actuator/health");
+        assertNotRouted("GET", "/integration/v1/auth/csrf");
+        assertNotRouted("POST", "/api/v1/records");
     }
 
     private void assertRouted(String method, String path, String service) throws Exception {
@@ -68,12 +154,21 @@ class ApiGatewayRoutingTests {
         assertThat(response.body()).isEqualTo(service + " " + method + " " + path);
     }
 
+    private void assertNotRouted(String method, String path) throws Exception {
+        assertThat(send(method, path).statusCode()).as("%s %s", method, path).isEqualTo(404);
+    }
+
+    private HttpRequest.Builder request(String path) {
+        return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
+                .timeout(Duration.ofSeconds(5));
+    }
+
     private HttpResponse<String> send(String method, String path) throws Exception {
+        return send(request(path).method(method, HttpRequest.BodyPublishers.noBody()).build());
+    }
+
+    private HttpResponse<String> send(HttpRequest request) throws Exception {
         try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
-            var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                    .timeout(Duration.ofSeconds(5))
-                    .method(method, HttpRequest.BodyPublishers.noBody())
-                    .build();
             return client.send(request, HttpResponse.BodyHandlers.ofString());
         }
     }
@@ -94,5 +189,9 @@ class ApiGatewayRoutingTests {
 
     private static String address(HttpServer server) {
         return "http://127.0.0.1:" + server.getAddress().getPort();
+    }
+
+    private record ForwardedLogin(String method, String path, String cookie, String csrfToken, String contentType,
+            String body) {
     }
 }
