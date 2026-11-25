@@ -1,6 +1,7 @@
 package ar.edu.utn.frsf.pfc.management;
 
 import ar.edu.utn.frsf.pfc.management.catalog.DemoFixtureLoader;
+import ar.edu.utn.frsf.pfc.management.station.StationCredentialCommand;
 import ar.edu.utn.frsf.pfc.management.web.DemoWebAccountLoader;
 
 import org.springframework.boot.SpringApplication;
@@ -12,6 +13,13 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 public class ManagementApplication {
 
 	public static void main(String[] args) {
+		if (StationCredentialCommand.matches(args)) {
+			int status = StationCredentialCommand.run(args);
+			if (status != 0) {
+				System.exit(status);
+			}
+			return;
+		}
 		if (args.length > 0 && (args[0].equals("load-demo-fixture") || args[0].equals("load-demo-web-accounts"))) {
 			if (args.length != 1) {
 				throw new IllegalArgumentException(args[0] + " does not accept arguments");

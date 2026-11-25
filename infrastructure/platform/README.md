@@ -179,6 +179,55 @@ la imagen PostgreSQL fijada por digest y una base separada para el cambio de
 vigencia a las 12:05 UTC. Flyway 12.11.0 advierte que PostgreSQL 19 supera su
 última versión verificada, PostgreSQL 18.
 
+## Identidad técnica de Station
+
+Gestión conserva en su PostgreSQL el chasis textual, el productor, las operaciones
+autorizadas y el verificador de la credencial. Carga primero el catálogo. La
+provisión y la revocación se ejecutan por separado del arranque de la plataforma.
+En el ejemplo, `station-01` identifica un productor ficticio del chasis `000123`
+con permiso para enviar registros (`RECORDS_WRITE`).
+
+Genera una credencial hexadecimal de 32 bytes una sola vez. En Bash, usa una
+ruta nueva en un directorio restringido fuera del repositorio para guardarla
+cifrada. GnuPG solicita la frase de paso.
+
+```bash
+(
+  set -euo pipefail
+  umask 077
+  openssl rand -hex 32 |
+    gpg --symmetric --cipher-algo AES256 --output /ruta/protegida/station-01-token.gpg
+)
+```
+
+Pasa el secreto por la entrada estándar del proceso de provisión.
+
+```bash
+(
+  set -euo pipefail
+  gpg --decrypt /ruta/protegida/station-01-token.gpg |
+    docker compose -f infrastructure/platform/compose.yaml run --no-deps --rm -T \
+      management provision-station 000123 station-01 RECORDS_WRITE
+)
+```
+
+El alta devuelve `CREATED`. Repetirla con la misma credencial y operaciones
+devuelve `ALREADY_EXISTS` mientras está vigente y `ALREADY_REVOKED` si fue
+revocada. Un secreto o alcance incompatible, incluido un secreto vinculado a
+otra identidad, detiene el comando con error y conserva los datos previos.
+
+Para revocar la credencial, indica el chasis y el productor.
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml run --no-deps --rm -T \
+  management revoke-station 000123 station-01
+```
+
+El comando devuelve `REVOKED` en la primera ejecución y `ALREADY_REVOKED`
+en las siguientes. Gestión audita el alta y la revocación efectivas. En este
+paso se conserva una credencial por par Instancia/productor. La validación
+interna desde Registros se incorpora en P1-03.5.
+
 ## Resguardo de configuración
 
 Conservar una copia cifrada de la configuración junto al procedimiento de
