@@ -122,10 +122,11 @@ versiones y fuentes del catálogo compartido.
   con la cuenta personal `gabbce`. Conserva en Drive las definiciones canónicas y
   en el repositorio el código y la documentación técnica. Usa el tablero para
   estados, prioridades y dependencias; consulta el detalle en la issue vinculada.
-- Antes de implementar, identifica el incremento, la card y el paso correspondiente.
-  Revisa el plan, las dependencias y los criterios de aceptación; prepara y refina
-  ese trabajo antes de escribir código. Una solicitud de cambio no sustituye esta
-  preparación. Ajusta la granularidad al resultado, sin crear una issue por archivo.
+- Antes de iniciar la implementación de una card, identifica el incremento y define
+  el conjunto de subissues previstas, con su alcance, orden, dependencias y criterios
+  de aceptación. Revisa el plan de la card completo antes de comenzar el primer paso.
+  Una solicitud de cambio no sustituye esta preparación. Ajusta la granularidad al
+  resultado, sin crear una issue por archivo.
 - Usa un milestone por incremento demostrable, sin fijar una cantidad de prototipos
   ni fechas sin fundamento. Incluye en él las cards padre; las subissues se siguen
   dentro de cada card para evitar duplicar el conteo de avance.
@@ -133,9 +134,9 @@ versiones y fuentes del catálogo compartido.
   referencias pertinentes y criterios de aceptación observables. Sus subissues son
   pasos verificables con checklist; heredan el contexto del padre. Al cerrar la
   card, resume el resultado integrado y enlaza sus subissues sin repetir el detalle.
-- Refina progresivamente: detalla las cards próximas a ejecución y conserva alcance
-  y dependencias de las posteriores. Completa sus pasos antes de abordarlas, sin
-  anticipar decisiones de implementación que todavía no hacen falta.
+- Refina progresivamente las cards próximas a ejecución y conserva el alcance y las
+  dependencias de las posteriores. Si surge nueva evidencia durante la ejecución,
+  actualiza el plan de la card y las subissues afectadas.
 - Usa los estados Backlog → Lista para desarrollar → En curso → En revisión → Hecha.
   Registra bloqueos mediante dependencias. Una tarea está lista cuando sus entradas,
   pasos próximos y aceptación son claros y sus dependencias están satisfechas.
