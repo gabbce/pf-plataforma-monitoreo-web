@@ -28,15 +28,21 @@ paths:
       tags:
         - Access
       operationId: getCsrfToken
-      summary: Obtener el token CSRF de ingreso
-      description: Gestión entrega un token vinculado al estado previo al ingreso. Puede establecer la cookie
-        del contexto previo. El navegador conserva las cookies y usa el token en el encabezado X-CSRF-TOKEN
-        al enviar el ingreso. Este recurso está disponible antes de autenticar y su respuesta no se almacena
-        en caché.
-      security: []
+      summary: Obtener el token CSRF de ingreso o de cierre de sesión
+      description: |-
+        Al omitir purpose, Gestión entrega un token vinculado al contexto previo al ingreso y puede establecer la cookie PFC_LOGIN. Esta variante está disponible antes de autenticar.
+
+        Con purpose=logout, Gestión requiere una cookie PFC_SESSION activa y entrega un token vinculado a esa sesión. El token se conserva durante la sesión.
+
+        El navegador envía el token en X-CSRF-TOKEN al iniciar o cerrar la sesión, según el contexto en el que lo obtuvo. La respuesta no se almacena en caché.
+      security:
+        - {}
+        - webSession: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfPurpose'
       responses:
         '200':
-          description: Token de ingreso emitido.
+          description: Token del contexto solicitado.
           headers:
             Cache-Control:
               $ref: '#/components/headers/NoStore'
@@ -47,8 +53,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/CsrfToken'
               examples:
-                token:
+                login:
                   $ref: ./ejemplos/csrf-token.json
+                logout:
+                  $ref: ./ejemplos/csrf-logout-token.json
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/SessionRequired'
         '500':
           $ref: '#/components/responses/ServerError'
   /auth/session:
@@ -84,6 +96,30 @@ paths:
           $ref: '#/components/responses/InvalidRequest'
         '401':
           $ref: '#/components/responses/InvalidCredentials'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags:
+        - Access
+      operationId: deleteWebSession
+      summary: Cerrar la sesión web
+      description: Gestión verifica la sesión activa y su token CSRF de cierre. Revoca únicamente la sesión
+        identificada por PFC_SESSION y expira su cookie. Las solicitudes posteriores con la sesión revocada
+        reciben 401.
+      parameters:
+        - $ref: '#/components/parameters/LogoutCsrfHeader'
+      responses:
+        '204':
+          description: Sesión revocada y cookie expirada.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/ExpiredWebSessionCookie'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '401':
+          $ref: '#/components/responses/SessionRequired'
         '403':
           $ref: '#/components/responses/InvalidCsrf'
         '500':
@@ -256,8 +292,8 @@ components:
         type: string
         const: no-store
     PreAuthenticationCookie:
-      description: Cookie del contexto previo al ingreso, cuando se requiere establecerlo. El navegador la
-        conserva al presentar el token CSRF.
+      description: Cookie PFC_LOGIN del contexto previo al ingreso, cuando se requiere establecerlo.
+        Se establece únicamente en la variante de ingreso. El navegador la conserva al presentar su token CSRF.
       schema:
         type: string
     WebSessionCookie:
@@ -269,6 +305,15 @@ components:
       examples:
         https:
           $ref: ./ejemplos/session-cookie.json
+    ExpiredWebSessionCookie:
+      required: true
+      description: Expira la cookie PFC_SESSION con valor vacío y Max-Age=0. Usa los mismos atributos de la
+        cookie de ingreso, Path=/api/v1, Secure, HttpOnly y SameSite=Lax.
+      schema:
+        type: string
+      examples:
+        https:
+          $ref: ./ejemplos/session-cleared-cookie.json
     SessionChallenge:
       required: true
       description: Indica a la interfaz que debe iniciar sesión web. El esquema Session pertenece a esta API.
@@ -276,6 +321,15 @@ components:
         type: string
         const: Session realm="PFC"
   parameters:
+    CsrfPurpose:
+      name: purpose
+      in: query
+      required: false
+      description: Usa logout para obtener el token CSRF de la sesión activa. Omite el parámetro para obtener
+        el token del contexto previo al ingreso. Un valor inválido o un parámetro repetido devuelve 400.
+      schema:
+        type: string
+        enum: [logout]
     CsrfHeader:
       name: X-CSRF-TOKEN
       in: header
@@ -288,6 +342,17 @@ components:
       examples:
         login:
           $ref: ./ejemplos/csrf-header.json
+    LogoutCsrfHeader:
+      name: X-CSRF-TOKEN
+      in: header
+      required: true
+      description: Token de la sesión activa obtenido por GET /auth/csrf?purpose=logout.
+      schema:
+        type: string
+        minLength: 1
+      examples:
+        logout:
+          $ref: ./ejemplos/csrf-logout-header.json
     Chassis:
       name: chassis
       in: path
@@ -354,7 +419,7 @@ components:
       example: '2026-01-15T12:11:00Z'
   responses:
     InvalidRequest:
-      description: Solicitud de ingreso con estructura inválida.
+      description: Estructura o parámetros de la solicitud inválidos.
       headers:
         Cache-Control:
           $ref: '#/components/headers/NoStore'
@@ -380,7 +445,7 @@ components:
             invalidCredentials:
               $ref: ./ejemplos/error-invalid-credentials.json
     InvalidCsrf:
-      description: El token CSRF falta, venció o no corresponde al contexto previo.
+      description: El token CSRF falta, es inválido, venció o pertenece a otro contexto o sesión.
       headers:
         Cache-Control:
           $ref: '#/components/headers/NoStore'
@@ -392,7 +457,7 @@ components:
             invalidCsrf:
               $ref: ./ejemplos/error-invalid-csrf.json
     SessionRequired:
-      description: Sesión ausente, inválida o vencida. La interfaz solicita un nuevo ingreso.
+      description: Sesión ausente, inválida, vencida o revocada. La interfaz solicita un nuevo ingreso.
       headers:
         Cache-Control:
           $ref: '#/components/headers/NoStore'

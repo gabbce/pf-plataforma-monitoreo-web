@@ -32,7 +32,29 @@ de ingreso, listado y detalle de máquinas llegan a Gestión. Gateway reenvía
 destino incorporarán los controladores de esas operaciones en sus cards.
 Las sondas Actuator de los servicios son internas.
 
-## Preparación local
+## Arranque diario
+
+Desde la raíz, en Linux o WSL, usa `make dev` para preparar la configuración,
+construir y arrancar el entorno central y cargar la máquina ficticia y las
+cuentas de prueba. Abre `http://localhost:8095/` y consulta las credenciales
+con `make cuentas`.
+
+| Comando | Operación |
+| --- | --- |
+| `make estado` | Muestra el estado de los servicios. |
+| `make logs` | Sigue los registros de todos los servicios. |
+| `make logs SERVICIO=management` | Sigue los registros de Gestión. |
+| `make parar` | Detiene el entorno y conserva los datos. |
+
+El [archivo de cuentas de desarrollo](cuentas-desarrollo.env) define en texto
+plano la contraseña ficticia `pfc-desarrollo` para las tres cuentas locales.
+Make le pasa este archivo solo al proceso de carga de cuentas.
+Para reutilizar contraseñas ya cargadas en un volumen propio, guarda los valores
+correspondientes en un archivo local con las mismas variables y ejecuta
+`make dev CUENTAS=/ruta/al/archivo.env`. La carga rechaza datos incompatibles y
+conserva las cuentas existentes.
+
+## Preparación manual
 
 Usar Docker Engine y el plugin Compose en Linux o WSL, con acceso a los
 registros de imágenes y dependencias durante la construcción. Ejecutar los
@@ -122,6 +144,9 @@ docker compose -f infrastructure/platform/compose.yaml run --rm \
 unset PFC_DEMO_TECHNICIAN_PASSWORD PFC_DEMO_OWNER_PASSWORD PFC_DEMO_UNASSOCIATED_OWNER_PASSWORD
 ```
 
+Este procedimiento manual permite usar contraseñas elegidas al crear las
+cuentas. Para el flujo diario, usa el [arranque diario](#arranque-diario).
+
 Las contraseñas admiten hasta 72 bytes UTF-8 y deben contener algún carácter
 distinto de espacio en blanco. El comando registra las altas efectivas y
 verifica el estado y los hashes de las cuentas existentes. Una repetición con
@@ -140,6 +165,13 @@ ingreso. Son valores del P1 configurables en el entorno del proceso de Gestión
 mediante `PFC_WEB_CSRF_TTL` y `PFC_WEB_SESSION_TTL`. La API resuelve el
 permiso y la asociación vigentes en cada consulta. El campo
 `lastAuthenticatedContactAt` se devuelve como `null` en este paso.
+
+Para cerrar la sesión, el cliente solicita `GET /api/v1/auth/csrf?purpose=logout`
+con la cookie `PFC_SESSION` activa y envía el token recibido en `X-CSRF-TOKEN`
+al hacer `DELETE /api/v1/auth/session`. Gestión revoca esa sesión y devuelve
+`204` con la cookie expirada. Una sesión ausente, inválida, vencida o revocada
+recibe `401`. Con una sesión activa, un token ausente, inválido o de otro
+contexto recibe `403`.
 
 Para ejecutar las pruebas de Gestión con Docker disponible, usar
 `./mvnw -pl backend/management -am verify`. Las pruebas de integración usan

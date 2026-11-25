@@ -1,0 +1,4 @@
+{
+  "summary": "Token ficticio enviado al cerrar la sesión",
+  "value": "pfc-example-logout-csrf-token"
+}

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 class WebSessions implements CsrfTokenRepository {
 
     static final String CSRF_HEADER = "X-CSRF-TOKEN";
+    static final String LOGOUT_SESSION = "pfc.web.logoutSession";
 
     private final JdbcClient jdbc;
     private final WebCredentials credentials;
@@ -41,6 +42,13 @@ class WebSessions implements CsrfTokenRepository {
 
     @Override
     public CsrfToken loadToken(HttpServletRequest request) {
+        if (request.getAttribute(LOGOUT_SESSION) instanceof ActiveSession session) {
+            var value = session.logoutCsrfToken();
+            if (value == null && "GET".equals(request.getMethod())) {
+                value = issueLogoutToken(session);
+            }
+            return value == null ? null : token(value);
+        }
         return WebCookies.digestFrom(request, WebCookies.CONTEXT)
                 .flatMap(digest -> jdbc.sql("""
                         SELECT csrf_token FROM web_login_context
@@ -55,6 +63,9 @@ class WebSessions implements CsrfTokenRepository {
 
     @Override
     public void saveToken(CsrfToken csrf, HttpServletRequest request, HttpServletResponse response) {
+        if (request.getAttribute(LOGOUT_SESSION) != null) {
+            return;
+        }
         if (csrf == null) {
             WebCookies.digestFrom(request, WebCookies.CONTEXT).ifPresent(digest ->
                     jdbc.sql("DELETE FROM web_login_context WHERE context_digest = :digest")
@@ -121,15 +132,45 @@ class WebSessions implements CsrfTokenRepository {
         return session;
     }
 
-    Optional<Long> authenticatedUser(HttpServletRequest request) {
+    Optional<ActiveSession> authenticatedSession(HttpServletRequest request) {
         return WebCookies.digestFrom(request, WebCookies.SESSION)
                 .flatMap(digest -> jdbc.sql("""
-                        SELECT s.user_id FROM web_session s JOIN web_user u USING (user_id)
+                        SELECT s.user_id, s.logout_csrf_token FROM web_session s JOIN web_user u USING (user_id)
                         WHERE s.session_digest = :digest AND s.expires_at > :now AND u.active
                         """)
                         .param("digest", digest)
                         .param("now", now())
-                        .query(Long.class).optional());
+                        .query((rows, index) -> new ActiveSession(digest, rows.getLong(1), rows.getString(2)))
+                        .optional());
+    }
+
+    void logout(ActiveSession session) {
+        var deleted = jdbc.sql("""
+                DELETE FROM web_session s USING web_user u
+                WHERE s.session_digest = :digest AND s.logout_csrf_token = :token AND s.expires_at > :now
+                      AND s.user_id = u.user_id AND u.active
+                """)
+                .param("digest", session.digest())
+                .param("token", session.logoutCsrfToken())
+                .param("now", now())
+                .update();
+        if (deleted != 1) {
+            throw WebProblem.SESSION_REQUIRED.failure();
+        }
+    }
+
+    private String issueLogoutToken(ActiveSession session) {
+        return jdbc.sql("""
+                UPDATE web_session s SET logout_csrf_token = COALESCE(s.logout_csrf_token, :token)
+                FROM web_user u
+                WHERE s.session_digest = :digest AND s.expires_at > :now AND s.user_id = u.user_id AND u.active
+                RETURNING s.logout_csrf_token
+                """)
+                .param("digest", session.digest())
+                .param("token", WebCookies.newToken())
+                .param("now", now())
+                .query(String.class).optional()
+                .orElseThrow(WebProblem.SESSION_REQUIRED::failure);
     }
 
     private OffsetDateTime now() {
@@ -138,5 +179,8 @@ class WebSessions implements CsrfTokenRepository {
 
     private static CsrfToken token(String value) {
         return new DefaultCsrfToken(CSRF_HEADER, "_csrf", value);
+    }
+
+    record ActiveSession(String digest, long userId, String logoutCsrfToken) {
     }
 }

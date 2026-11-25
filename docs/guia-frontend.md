@@ -1,31 +1,46 @@
 # Guía del frontend
 
-La base incluye las vistas de acceso, máquinas autorizadas, detalle e
-histórico. Los recorridos locales usan los [ejemplos del contrato web](contratos/web/ejemplos/)
+La compilación estándar permite ingresar, consultar las máquinas autorizadas
+y abrir su ficha de catálogo. El modo local de escenarios incluye además
+mediciones e histórico. Los escenarios usan los [ejemplos del contrato web](contratos/web/ejemplos/)
 y los [criterios aprobados de las interfaces](diseno/interfaces-p1.md).
 El [README del frontend](../frontend/README.md#requisitos) indica las
 versiones de Node.js y npm.
 
 ## Instalar y ejecutar
 
-Instala y comprueba la base desde la raíz del repositorio.
+Instala y comprueba la base desde la raíz del repositorio. Los comandos de
+Make compilan y prueban también los módulos Java.
 
 ```sh
-npm --prefix frontend ci
-npm --prefix frontend run typecheck
-npm --prefix frontend run lint
-npm --prefix frontend test
-npm --prefix frontend run build
+make instalar
+make lint
+make test
+make build
 ```
 
-La compilación estándar genera `frontend/dist/`. El acceso permanece
-deshabilitado hasta conectar la API y los ejemplos quedan fuera del
-sitio compilado.
+La compilación estándar genera `frontend/dist/`. Compose construye y sirve
+esta variante con la API en el mismo origen.
+
+## Acceso y catálogo en Compose
+
+Ejecuta `make dev` desde la raíz para arrancar el
+[entorno central](../infrastructure/platform/README.md#arranque-diario) y
+cargar la máquina ficticia y las cuentas de prueba. Abre
+`http://localhost:8095/` y usa una cuenta de `make cuentas`. NGINX sirve la
+aplicación y deriva `/api/v1` a Gateway. Gestión valida la sesión y los
+permisos. El navegador administra las cookies.
+
+La ficha muestra el chasis, el último contacto registrado y las definiciones
+con su unidad. La consulta de últimas mediciones e histórico se integra en
+P1-04 y P1-06.
+
+## Recorrido local con escenarios
 
 Inicia Vite en modo de escenarios para recorrer las vistas con los ejemplos.
 
 ```sh
-npm --prefix frontend run dev -- --mode escenarios
+make escenarios
 ```
 
 Abre la URL que indica Vite y usa las credenciales ficticias de
@@ -74,6 +89,14 @@ legibilidad y marca con la [guía de Figma](https://www.figma.com/design/u4Pk0hh
 y la [ficha de interfaces](diseno/interfaces-p1.md). En móvil activa la
 emulación táctil. Comprueba que el contenido se pueda leer y operar sin
 desplazamiento horizontal de la página.
+
+En Compose, abre el chasis `000123` con una cuenta autorizada y recarga el
+detalle. Una cuenta sin asociación recibe un listado vacío y un acceso
+directo denegado. Tras cerrar sesión, verifica que Atrás, recargar o abrir
+`/#/maquinas/000123` soliciten el ingreso. Confirma que el contacto nulo
+se muestra como «Sin contacto registrado».
+
+En el modo de escenarios, verifica los siguientes recorridos.
 
 | Recorrido | Comprobación esperada |
 | --- | --- |

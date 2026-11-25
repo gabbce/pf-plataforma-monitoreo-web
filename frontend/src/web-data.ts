@@ -42,10 +42,13 @@ export type HistoryResult = {
   total: number
 }
 
-export interface WebDataSource {
+export interface CatalogDataSource {
   signIn: (identifier: string, password: string, signal: AbortSignal) => Promise<void>
   machines: (signal: AbortSignal) => Promise<MachineSummary[]>
   machine: (chassis: string, signal: AbortSignal) => Promise<Machine>
+}
+
+export interface WebDataSource extends CatalogDataSource {
   latest: (chassis: string, signal: AbortSignal) => Promise<LatestReadings>
   history: (
     chassis: string,

@@ -30,11 +30,19 @@ function verifyAccess(examples) {
 
   const token = examples['csrf-token'].value.token;
   assert.equal(examples['csrf-header'].value, token);
+  const logoutToken = examples['csrf-logout-token'].value.token;
+  assert.equal(examples['csrf-logout-header'].value, logoutToken);
+  assert.notEqual(logoutToken, token);
 
-  const cookieAttributes = examples['session-cookie'].value.split(';').slice(1).map(attribute => attribute.trim());
-  for (const attribute of ['Secure', 'HttpOnly', 'SameSite=Lax']) {
+  const [cookie, ...cookieAttributes] = examples['session-cookie'].value.split(';').map(attribute => attribute.trim());
+  assert.match(cookie, /^PFC_SESSION=.+$/);
+  for (const attribute of ['Path=/api/v1', 'Secure', 'HttpOnly', 'SameSite=Lax']) {
     assert.ok(cookieAttributes.includes(attribute), `La cookie de sesión declara ${attribute}`);
   }
+  const [clearedCookie, ...clearedAttributes] = examples['session-cleared-cookie'].value.split(';')
+    .map(attribute => attribute.trim());
+  assert.equal(clearedCookie, 'PFC_SESSION=');
+  assert.deepEqual(new Set(clearedAttributes), new Set([...cookieAttributes, 'Max-Age=0']));
 }
 
 function verifyMeasurements(examples, parameters) {

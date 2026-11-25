@@ -25,6 +25,7 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -41,29 +42,33 @@ class WebSecurityConfiguration {
     SecurityFilterChain webApi(HttpSecurity http, WebSessions sessions, JsonMapper json) throws Exception {
         var matcher = PathPatternRequestMatcher.withDefaults();
         var csrfPath = WebCookies.API + "/auth/csrf";
-        var loginPath = WebCookies.API + "/auth/session";
+        var sessionPath = WebCookies.API + "/auth/session";
         var machinesPath = WebCookies.API + "/machines";
         var machinePath = machinesPath + "/{chassis}";
         var csrfResource = matcher.matcher(HttpMethod.GET, csrfPath);
-        var login = matcher.matcher(HttpMethod.POST, loginPath);
+        var login = matcher.matcher(HttpMethod.POST, sessionPath);
+        var logout = matcher.matcher(HttpMethod.DELETE, sessionPath);
+        var logoutToken = new AndRequestMatcher(csrfResource, WebAccessController::isLogoutPurpose);
+        var logoutRequests = new OrRequestMatcher(logoutToken, logout);
         var machines = new OrRequestMatcher(matcher.matcher(HttpMethod.GET, machinesPath),
                 matcher.matcher(HttpMethod.GET, machinePath));
 
         return http
-                .securityMatcher(new OrRequestMatcher(matcher.matcher(csrfPath), matcher.matcher(loginPath),
+                .securityMatcher(new OrRequestMatcher(matcher.matcher(csrfPath), matcher.matcher(sessionPath),
                         matcher.matcher(machinesPath), matcher.matcher(machinePath)))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .csrf(csrf -> csrf.requireCsrfProtectionMatcher(login).csrfTokenRepository(sessions)
+                .csrf(csrf -> csrf.requireCsrfProtectionMatcher(new OrRequestMatcher(login, logout))
+                        .csrfTokenRepository(sessions)
                         .csrfTokenRequestHandler(new HeaderOnlyCsrfHandler()))
-                .addFilterBefore(new WebApiFilter(sessions, machines, json), CsrfFilter.class)
+                .addFilterBefore(new WebApiFilter(sessions, machines, logoutRequests, json), CsrfFilter.class)
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, error) ->
                                 WebProblem.SESSION_REQUIRED.write(response, json))
                         .accessDeniedHandler((request, response, error) ->
                                 (error instanceof CsrfException ? WebProblem.INVALID_CSRF : WebProblem.ACCESS_DENIED)
                                         .write(response, json)))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(csrfResource, login).permitAll()
-                        .requestMatchers(machines).authenticated()
+                .authorizeHttpRequests(auth -> auth.requestMatchers(machines, logoutRequests).authenticated()
+                        .requestMatchers(csrfResource, login).permitAll()
                         .anyRequest().denyAll())
                 .build();
     }
@@ -80,11 +85,14 @@ class WebSecurityConfiguration {
 
         private final WebSessions sessions;
         private final RequestMatcher machines;
+        private final RequestMatcher logoutRequests;
         private final JsonMapper json;
 
-        private WebApiFilter(WebSessions sessions, RequestMatcher machines, JsonMapper json) {
+        private WebApiFilter(WebSessions sessions, RequestMatcher machines, RequestMatcher logoutRequests,
+                JsonMapper json) {
             this.sessions = sessions;
             this.machines = machines;
+            this.logoutRequests = logoutRequests;
             this.json = json;
         }
 
@@ -93,11 +101,20 @@ class WebSecurityConfiguration {
                 throws ServletException, IOException {
             response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
             try {
-                if (machines.matches(request)) {
-                    sessions.authenticatedUser(request).ifPresent(userId -> {
+                var logoutRequest = logoutRequests.matches(request);
+                if (logoutRequest || machines.matches(request)) {
+                    var session = sessions.authenticatedSession(request);
+                    if (logoutRequest && session.isEmpty()) {
+                        WebProblem.SESSION_REQUIRED.write(response, json);
+                        return;
+                    }
+                    session.ifPresent(active -> {
+                        if (logoutRequest) {
+                            request.setAttribute(WebSessions.LOGOUT_SESSION, active);
+                        }
                         var context = SecurityContextHolder.createEmptyContext();
-                        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(userId, null,
-                                List.of()));
+                        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(active.userId(),
+                                null, List.of()));
                         SecurityContextHolder.setContext(context);
                     });
                 }

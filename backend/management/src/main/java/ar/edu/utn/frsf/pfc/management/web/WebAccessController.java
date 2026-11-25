@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -27,8 +28,17 @@ class WebAccessController {
     }
 
     @GetMapping(path = "/csrf", produces = MediaType.APPLICATION_JSON_VALUE)
-    CsrfResponse csrf(@RequestAttribute("org.springframework.security.web.csrf.CsrfToken") CsrfToken csrf) {
+    CsrfResponse csrf(@RequestAttribute("org.springframework.security.web.csrf.CsrfToken") CsrfToken csrf,
+            HttpServletRequest request) {
+        if (request.getParameterValues("purpose") != null && !isLogoutPurpose(request)) {
+            throw WebProblem.INVALID_REQUEST.failure();
+        }
         return new CsrfResponse(csrf.getToken());
+    }
+
+    static boolean isLogoutPurpose(HttpServletRequest request) {
+        var purposes = request.getParameterValues("purpose");
+        return purposes != null && purposes.length == 1 && "logout".equals(purposes[0]);
     }
 
     @PostMapping("/session")
@@ -43,6 +53,14 @@ class WebAccessController {
         var token = sessions.login(identifier, password, request);
         WebCookies.set(response, WebCookies.SESSION, token);
         WebCookies.clear(response, WebCookies.CONTEXT);
+    }
+
+    @DeleteMapping("/session")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void logout(@RequestAttribute(WebSessions.LOGOUT_SESSION) WebSessions.ActiveSession session,
+            HttpServletResponse response) {
+        sessions.logout(session);
+        WebCookies.clear(response, WebCookies.SESSION);
     }
 
     private static String requiredString(JsonNode node) {

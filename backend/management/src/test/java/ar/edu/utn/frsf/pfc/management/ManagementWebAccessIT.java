@@ -182,6 +182,84 @@ class ManagementWebAccessIT {
     }
 
     @Test
+    void requiresAnActiveSessionForLogoutAndRejectsInvalidCsrfPurpose() throws Exception {
+        problem(get("/auth/csrf?purpose=", null), 400, "INVALID_REQUEST");
+        problem(get("/auth/csrf?purpose=login", null), 400, "INVALID_REQUEST");
+        problem(get("/auth/csrf?purpose=logout&purpose=logout", null), 400, "INVALID_REQUEST");
+        for (var cookie : new String[] {null, "PFC_SESSION=malformed", "PFC_SESSION=" + "A".repeat(43)}) {
+            problem(get("/auth/csrf?purpose=logout", cookie), 401, "SESSION_REQUIRED");
+            problem(logout(cookie, null), 401, "SESSION_REQUIRED");
+        }
+
+        loadAccounts();
+        var session = authenticated(OWNER, OWNER_PASSWORD);
+        var token = logoutCsrf(session);
+        NOW.set(START.plus(Duration.ofMinutes(30)));
+        problem(get("/auth/csrf?purpose=logout", session), 401, "SESSION_REQUIRED");
+        problem(logout(session, token), 401, "SESSION_REQUIRED");
+    }
+
+    @Test
+    void onlyAcceptsTheCurrentSessionsLogoutTokenAndRevokesThatSession() throws Exception {
+        loadAccounts();
+        var session = authenticated(OWNER, OWNER_PASSWORD);
+        var anotherSession = authenticated(OWNER, OWNER_PASSWORD);
+        var preLogin = csrf(null);
+        var cookies = session + "; " + preLogin.cookie();
+        var anotherToken = logoutCsrf(anotherSession);
+
+        problem(logout(cookies, preLogin.token()), 403, "INVALID_CSRF");
+        assertThat(jdbc.sql("SELECT count(*) FROM web_session WHERE logout_csrf_token IS NULL")
+                .query(Integer.class).single()).isEqualTo(1);
+
+        var token = logoutCsrf(session);
+        assertThat(token).isNotEqualTo(anotherToken).isNotEqualTo(preLogin.token());
+        assertThat(logoutCsrf(session)).isEqualTo(token);
+        assertThat(ok(get("/auth/csrf", cookies)).get("token").stringValue()).isEqualTo(preLogin.token());
+        problem(logout(session, null), 403, "INVALID_CSRF");
+        problem(logout(session, "wrong-token"), 403, "INVALID_CSRF");
+        problem(logout(cookies, preLogin.token()), 403, "INVALID_CSRF");
+        problem(logout(session, anotherToken), 403, "INVALID_CSRF");
+        assertThat(get("/machines", session).statusCode()).isEqualTo(200);
+
+        var response = logout(cookies, token);
+        assertThat(response.statusCode()).isEqualTo(204);
+        assertThat(response.body()).isEmpty();
+        assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
+        assertCookie(response, "PFC_SESSION");
+        assertThat(response.headers().allValues("Set-Cookie")).singleElement().asString()
+                .startsWith("PFC_SESSION=;").contains("Max-Age=0");
+
+        problem(get("/machines", session), 401, "SESSION_REQUIRED");
+        problem(get("/auth/csrf?purpose=logout", session), 401, "SESSION_REQUIRED");
+        problem(logout(session, token), 401, "SESSION_REQUIRED");
+        assertThat(get("/machines", anotherSession).statusCode()).isEqualTo(200);
+        assertThat(logoutCsrf(anotherSession)).isEqualTo(anotherToken);
+    }
+
+    @Test
+    void concurrentLogoutRequestsShareOneTokenAndRevokeTheSessionOnceWithoutMachineReadPermission() throws Exception {
+        loadAccounts();
+        var session = authenticated(TECHNICIAN, TECHNICIAN_PASSWORD);
+        jdbc.sql("DELETE FROM web_role_permission WHERE role_id = 'TECHNICAL_SERVICE'").update();
+        problem(get("/machines", session), 403, "ACCESS_DENIED");
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var firstToken = executor.submit(() -> logoutCsrf(session));
+            var secondToken = executor.submit(() -> logoutCsrf(session));
+            var token = firstToken.get(10, TimeUnit.SECONDS);
+            assertThat(secondToken.get(10, TimeUnit.SECONDS)).isEqualTo(token);
+
+            var firstLogout = executor.submit(() -> logout(session, token));
+            var secondLogout = executor.submit(() -> logout(session, token));
+            assertThat(List.of(firstLogout.get(10, TimeUnit.SECONDS), secondLogout.get(10, TimeUnit.SECONDS)))
+                    .satisfiesExactlyInAnyOrder(response -> assertThat(response.statusCode()).isEqualTo(204),
+                            response -> problem(response, 401, "SESSION_REQUIRED"));
+        }
+        assertThat(jdbc.sql("SELECT count(*) FROM web_session").query(Integer.class).single()).isZero();
+    }
+
+    @Test
     void enforcesExpiryAndReturnsTheSameCredentialErrorAcrossFailures() throws Exception {
         loadAccounts();
         jdbc.sql("INSERT INTO web_role (role_id, name) VALUES ('OPERATOR', 'Operador')").update();
@@ -293,6 +371,17 @@ class ManagementWebAccessIT {
 
     private static HttpResponse<String> get(String path, String cookie) throws Exception {
         return send("GET", path, cookie, null, null, null);
+    }
+
+    private static String logoutCsrf(String session) throws Exception {
+        var response = get("/auth/csrf?purpose=logout", session);
+        var body = ok(response);
+        assertThat(response.headers().allValues("Set-Cookie")).isEmpty();
+        return body.get("token").stringValue();
+    }
+
+    private static HttpResponse<String> logout(String cookies, String csrf) throws Exception {
+        return send("DELETE", "/auth/session", cookies, csrf, null, null);
     }
 
     private static HttpResponse<String> post(String body, String cookie, String csrf) throws Exception {

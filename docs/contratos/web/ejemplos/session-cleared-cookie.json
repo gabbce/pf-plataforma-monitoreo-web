@@ -1,0 +1,4 @@
+{
+  "summary": "Cookie de sesión expirada en HTTPS",
+  "value": "PFC_SESSION=; Path=/api/v1; Max-Age=0; Secure; HttpOnly; SameSite=Lax"
+}

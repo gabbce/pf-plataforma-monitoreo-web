@@ -1,0 +1,6 @@
+{
+  "summary": "Token CSRF ficticio de la sesión activa",
+  "value": {
+    "token": "pfc-example-logout-csrf-token"
+  }
+}

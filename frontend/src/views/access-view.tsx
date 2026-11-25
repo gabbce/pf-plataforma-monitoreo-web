@@ -4,16 +4,18 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { WebError, type WebDataSource } from '@/web-data'
+import { WebError, type CatalogDataSource } from '@/web-data'
 
 export function AccessView({
   signIn,
   onSuccess,
   expired = false,
+  signedOut = false,
 }: {
-  signIn?: WebDataSource['signIn']
-  onSuccess?: () => void
+  signIn: CatalogDataSource['signIn']
+  onSuccess: () => void
   expired?: boolean
+  signedOut?: boolean
 }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
@@ -23,7 +25,7 @@ export function AccessView({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!signIn || pending) return
+    if (controller.current) return
 
     const form = event.currentTarget
     const data = new FormData(form)
@@ -35,7 +37,7 @@ export function AccessView({
 
     try {
       await signIn(String(data.get('identifier')), String(data.get('password')), attempt.signal)
-      if (!attempt.signal.aborted) onSuccess?.()
+      if (!attempt.signal.aborted) onSuccess()
     } catch (failure) {
       if (!attempt.signal.aborted) {
         setError(failure instanceof WebError && failure.status === 401
@@ -45,6 +47,7 @@ export function AccessView({
       }
     } finally {
       if (!attempt.signal.aborted) setPending(false)
+      controller.current = null
     }
   }
 
@@ -57,19 +60,21 @@ export function AccessView({
       {expired && (
         <Alert role="status"><AlertDescription>La sesión venció. Vuelve a ingresar.</AlertDescription></Alert>
       )}
+      {signedOut && (
+        <Alert role="status"><AlertDescription>La sesión se cerró.</AlertDescription></Alert>
+      )}
       <form onSubmit={submit} autoComplete="off" aria-busy={pending}>
         <FieldGroup className="gap-5">
           <Field>
             <FieldLabel htmlFor="identifier">Usuario</FieldLabel>
-            <Input id="identifier" name="identifier" className="min-h-11" required disabled={!signIn} />
+            <Input id="identifier" name="identifier" className="min-h-11" required />
           </Field>
           <Field>
             <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-            <Input id="password" name="password" type="password" className="min-h-11" required disabled={!signIn} />
+            <Input id="password" name="password" type="password" className="min-h-11" required />
           </Field>
           {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-          {!signIn && <p role="status" className="text-sm text-muted-foreground">El acceso todavía no está disponible.</p>}
-          <Button type="submit" className="min-h-11 w-full" disabled={!signIn || pending}>
+          <Button type="submit" className="min-h-11 w-full" disabled={pending}>
             {pending ? 'Ingresando…' : 'Ingresar'}
           </Button>
         </FieldGroup>

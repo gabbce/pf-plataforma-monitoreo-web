@@ -3,7 +3,7 @@ import { HashRouter } from 'react-router'
 
 import { AppLayout } from '@/components/app-layout'
 import { LoadingStatus } from '@/components/query-feedback'
-import { AccessView } from '@/views/access-view'
+import { ManagementApp } from '@/management-app'
 
 const ScenarioApp = import.meta.env.MODE === 'escenarios'
   ? lazy(() => import('@/scenarios/scenario-app'))
@@ -17,7 +17,7 @@ export default function App() {
           <ScenarioApp />
         </Suspense>
       ) : (
-        <AppLayout><AccessView /></AppLayout>
+        <ManagementApp />
       )}
     </HashRouter>
   )

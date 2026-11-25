@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 export function AppLayout({
   children,
   onSignOut,
+  signingOut = false,
 }: {
   children: ReactNode
   onSignOut?: () => void
+  signingOut?: boolean
 }) {
   const { pathname } = useLocation()
   const main = useRef<HTMLElement>(null)
@@ -47,9 +49,14 @@ export function AppLayout({
                 variant="link"
                 className="min-h-11 px-1.5 md:px-2"
                 onClick={onSignOut}
+                disabled={signingOut}
               >
-                <span className="md:hidden">Salir</span>
-                <span className="hidden md:inline">Cerrar sesión</span>
+                {signingOut ? 'Cerrando…' : (
+                  <>
+                    <span className="md:hidden">Salir</span>
+                    <span className="hidden md:inline">Cerrar sesión</span>
+                  </>
+                )}
               </Button>
             </nav>
           )}

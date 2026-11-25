@@ -58,42 +58,62 @@ class ApiGatewayRoutingTests {
     @Test
     void routesWebReadsToManagementWithoutChangingTheirPaths() throws Exception {
         assertRouted("GET", "/api/v1/auth/csrf", "management");
+        assertRouted("GET", "/api/v1/auth/csrf?purpose=logout", "management");
         assertRouted("GET", "/api/v1/machines", "management");
         assertRouted("GET", "/api/v1/machines/000123", "management");
     }
 
     @Test
-    void forwardsTheLoginRequestAndSessionCookie() throws Exception {
+    void forwardsLoginAndLogoutRequestsAndSessionCookies() throws Exception {
         String path = "/api/v1/auth/session";
         String loginBody = "{\"identifier\":\"reader\",\"password\":\"example\"}";
-        String preAuthCookie = "PFC_PRE_AUTH=context";
-        String csrfToken = "test-csrf-token";
+        String preAuthCookie = "PFC_LOGIN=context";
+        String loginToken = "test-login-token";
+        String logoutToken = "test-logout-token";
+        String session = "PFC_SESSION=session";
         String sessionCookie = "PFC_SESSION=session; Path=/api/v1; Secure; HttpOnly; SameSite=Lax";
-        var forwarded = new CompletableFuture<ForwardedLogin>();
+        String clearedCookie = "PFC_SESSION=; Path=/api/v1; Max-Age=0; Secure; HttpOnly; SameSite=Lax";
+        var forwardedLogin = new CompletableFuture<ForwardedAccessRequest>();
+        var forwardedLogout = new CompletableFuture<ForwardedAccessRequest>();
         management.createContext(path, exchange -> {
             try (exchange) {
                 var headers = exchange.getRequestHeaders();
-                forwarded.complete(new ForwardedLogin(exchange.getRequestMethod(), exchange.getRequestURI().toString(),
+                var forwarded = new ForwardedAccessRequest(exchange.getRequestMethod(), exchange.getRequestURI().toString(),
                         headers.getFirst("Cookie"), headers.getFirst("X-CSRF-TOKEN"), headers.getFirst("Content-Type"),
-                        new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
-                exchange.getResponseHeaders().add("Set-Cookie", sessionCookie);
+                        new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+                if ("DELETE".equals(forwarded.method())) {
+                    forwardedLogout.complete(forwarded);
+                    exchange.getResponseHeaders().add("Set-Cookie", clearedCookie);
+                } else {
+                    forwardedLogin.complete(forwarded);
+                    exchange.getResponseHeaders().add("Set-Cookie", sessionCookie);
+                }
                 exchange.getResponseHeaders().add("Cache-Control", "no-store");
                 exchange.sendResponseHeaders(204, -1);
             }
         });
 
-        var response = send(request(path)
+        var login = send(request(path)
                 .header("Cookie", preAuthCookie)
-                .header("X-CSRF-TOKEN", csrfToken)
+                .header("X-CSRF-TOKEN", loginToken)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(loginBody))
                 .build());
 
-        assertThat(forwarded.get(5, TimeUnit.SECONDS)).isEqualTo(new ForwardedLogin(
-                "POST", path, preAuthCookie, csrfToken, "application/json", loginBody));
-        assertThat(response.statusCode()).isEqualTo(204);
-        assertThat(response.headers().allValues("Set-Cookie")).containsExactly(sessionCookie);
-        assertThat(response.headers().allValues("Cache-Control")).containsExactly("no-store");
+        assertThat(forwardedLogin.get(5, TimeUnit.SECONDS)).isEqualTo(new ForwardedAccessRequest(
+                "POST", path, preAuthCookie, loginToken, "application/json", loginBody));
+        assertThat(login.statusCode()).isEqualTo(204);
+        assertThat(login.headers().allValues("Set-Cookie")).containsExactly(sessionCookie);
+        assertThat(login.headers().allValues("Cache-Control")).containsExactly("no-store");
+
+        var logout = send(request(path).header("Cookie", session).header("X-CSRF-TOKEN", logoutToken).DELETE().build());
+
+        assertThat(forwardedLogout.get(5, TimeUnit.SECONDS)).isEqualTo(new ForwardedAccessRequest(
+                "DELETE", path, session, logoutToken, null, ""));
+        assertThat(logout.statusCode()).isEqualTo(204);
+        assertThat(logout.body()).isEmpty();
+        assertThat(logout.headers().allValues("Set-Cookie")).containsExactly(clearedCookie);
+        assertThat(logout.headers().allValues("Cache-Control")).containsExactly("no-store");
     }
 
     @Test
@@ -139,6 +159,9 @@ class ApiGatewayRoutingTests {
         assertNotRouted("HEAD", "/api/v1/machines/000123");
         assertNotRouted("GET", "/api/v1/auth/csrf/");
         assertNotRouted("POST", "/api/v1/auth/session/extra");
+        assertNotRouted("DELETE", "/api/v1/auth/session/");
+        assertNotRouted("DELETE", "/api/v1/auth/session/extra");
+        assertNotRouted("PUT", "/api/v1/auth/session");
         assertNotRouted("GET", "/api/v1/machines/");
         assertNotRouted("GET", "/api/v1/machines/000123/");
         assertNotRouted("GET", "/api/v1/machines/000123/measurements/latest");
@@ -191,7 +214,7 @@ class ApiGatewayRoutingTests {
         return "http://127.0.0.1:" + server.getAddress().getPort();
     }
 
-    private record ForwardedLogin(String method, String path, String cookie, String csrfToken, String contentType,
+    private record ForwardedAccessRequest(String method, String path, String cookie, String csrfToken, String contentType,
             String body) {
     }
 }

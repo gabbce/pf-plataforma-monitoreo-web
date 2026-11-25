@@ -6,7 +6,7 @@ type Loader<T> = (signal: AbortSignal) => Promise<T>
 type Completed<T> = { status: 'success'; data: T } | { status: 'error'; error: WebError }
 export type QueryState<T> = Completed<T> | { status: 'loading' }
 
-export function useQuery<T>(load: Loader<T>) {
+export function useQuery<T>(load: Loader<T> | undefined) {
   const [attempt, setAttempt] = useState(0)
   const [completed, setCompleted] = useState<{
     load: Loader<T>
@@ -15,14 +15,17 @@ export function useQuery<T>(load: Loader<T>) {
   }>()
 
   useEffect(() => {
+    if (!load) return
+    const activeLoad: Loader<T> = load
+
     const controller = new AbortController()
     const { signal } = controller
 
     function finish(result: Completed<T>) {
-      if (!signal.aborted) setCompleted({ load, attempt, result })
+      if (!signal.aborted) setCompleted({ load: activeLoad, attempt, result })
     }
 
-    void load(signal).then(
+    void activeLoad(signal).then(
       (data) => finish({ status: 'success', data }),
       (error: unknown) => finish({
         status: 'error',
@@ -32,7 +35,7 @@ export function useQuery<T>(load: Loader<T>) {
     return () => controller.abort()
   }, [load, attempt])
 
-  const state: QueryState<T> = completed?.load === load && completed.attempt === attempt
+  const state: QueryState<T> = completed && completed.load === load && completed.attempt === attempt
     ? completed.result
     : { status: 'loading' }
 

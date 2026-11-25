@@ -125,12 +125,16 @@ cd pf-plataforma-monitoreo-web
 
 ### Compilación y comprobaciones locales
 
-Para Java, configurar un JDK 25 LTS en `JAVA_HOME` y agregar
-`$JAVA_HOME/bin` al inicio de `PATH`. Tener Docker disponible para las pruebas de
-integración de Gestión. Desde la raíz del repositorio:
+Desde la raíz del repositorio, ejecuta `make` para ver los comandos disponibles.
+Para compilar y probar en el host, configura un JDK 25 LTS en `JAVA_HOME`, agrega
+`$JAVA_HOME/bin` al inicio de `PATH` y usa Node.js 26.13.1 LTS con npm 12.2.3.
+Las pruebas de integración de Gestión requieren Docker.
 
 ```sh
-./mvnw clean verify
+make instalar
+make build
+make lint
+make test
 ```
 
 El Wrapper instala la versión de Maven declarada por el proyecto. Los cuatro JAR
@@ -142,11 +146,10 @@ contrato web y sus ejemplos y cómo comprobar los recorridos de las API.
 Las [skills del backend](docs/skills-backend.md) son compartidas por el
 equipo en el repositorio.
 
-Instala e inicia la interfaz desde la raíz con Node.js 26.13.1 LTS y npm 12.2.3.
+Para ver la interfaz con datos simulados, usa el modo de escenarios.
 
 ```sh
-npm --prefix frontend ci
-npm --prefix frontend run dev -- --mode escenarios
+make escenarios
 ```
 
 El [README del frontend](frontend/README.md) describe el entorno local.
@@ -156,10 +159,14 @@ correspondencia con el diseño aprobado.
 
 ### Entorno Docker de desarrollo
 
-El entorno local funciona con dos proyectos Compose. El central publica el
-frontend en `http://localhost:8095/` y el auxiliar usa su propia red y volumen
-SQLite. Cada guía incluye el arranque, el diagnóstico y la recreación de
-contenedores conservando los volúmenes.
+Desde la raíz, en Linux o WSL con Docker disponible, ejecuta `make dev` para
+arrancar el entorno central y cargar la máquina y las cuentas ficticias.
+Abre `http://localhost:8095/` y consulta los usuarios y contraseñas con
+`make cuentas`. Usa `make estado`, `make logs` o `make parar` para operar
+el entorno local.
+
+El auxiliar de Station se ejecuta por separado, con su propia red y volumen
+SQLite.
 
 - [Entorno central](infrastructure/platform/README.md)
 - [Auxiliar de Station](infrastructure/auxiliary/README.md)

@@ -2,7 +2,9 @@
 
 La aplicación web se inicializó con create-vite 9.3.4 y la plantilla oficial
 React con TypeScript. La base incluye acceso, máquinas autorizadas,
-detalle de máquina e histórico en el modo local de escenarios.
+detalle de máquina e histórico en el modo local de escenarios. La
+compilación estándar conecta el acceso y el catálogo de máquinas con Gestión
+mediante el entorno Compose central.
 Consulta la [guía del frontend](../docs/guia-frontend.md) para recorrer
 las vistas, verificar la base y mantener sus componentes y referencias.
 
@@ -28,27 +30,24 @@ versiones resueltas. Conserva el lockfile e instala con `npm ci`.
 
 ## Desarrollo y compilación
 
-Ejecutar desde `frontend/`. Si se usa nvm, ejecutar `nvm install` y `nvm use`
-para seleccionar el Node del proyecto. Si se necesita instalar la versión de
-npm declarada, ejecutar `npm install --global npm@12.2.3` con ese Node activo.
+Si usas nvm, ejecuta `nvm install` y `nvm use` desde `frontend/` para seleccionar
+el Node del proyecto. Si necesitas instalar la versión de npm declarada,
+ejecuta `npm install --global npm@12.2.3` con ese Node activo.
+
+Vuelve a la raíz y ejecuta `make instalar` y `make escenarios`.
+
+Vite indica en la terminal la URL local. Genera la compilación estándar desde
+la raíz con Make.
 
 ```sh
-npm ci
-npm run dev
+make build
 ```
 
-Vite indica en la terminal la URL local. Para generar y servir localmente
-la compilación de producción:
-
-```sh
-npm run build
-npm run preview
-```
-
-El build comprueba los tipos y genera los archivos estáticos en `dist/`.
-`npm run typecheck` ejecuta la comprobación de TypeScript por separado.
-`npm run lint` analiza el código con Oxlint.
-`npm test` comprueba la paginación con un mismo corte y el intercambio de fechas.
+El build compila también Java. En el frontend comprueba los tipos y genera
+los archivos estáticos en `dist/`. `make lint` ejecuta Oxlint y TypeScript.
+`make test` incluye las pruebas del frontend sobre solicitudes a Gestión,
+paginación e intercambio de fechas. Para usar la compilación estándar con
+la API, sigue la [guía del entorno Compose](../docs/guia-frontend.md#acceso-y-catálogo-en-compose).
 
 ## Organización
 
@@ -74,14 +73,13 @@ Para recorrer las cuatro vistas con los
 desde la raíz en modo de escenarios.
 
 ```sh
-npm --prefix frontend run dev -- --mode escenarios
+make escenarios
 ```
 
 Usa el identificador y la contraseña ficticios de
 [`login-request.json`](../docs/contratos/web/ejemplos/login-request.json).
 La sesión de prueba dura hasta cerrar sesión o recargar la página. El
-ingreso y las consultas se resuelven en memoria. La compilación estándar
-deja el acceso deshabilitado hasta que se conecten las API reales.
+ingreso y las consultas se resuelven en memoria.
 
 Sin parámetro se activa el recorrido normal. Agrega `?scenario=` con una
 de estas variantes antes del fragmento `#` de la URL.
