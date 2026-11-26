@@ -7,7 +7,7 @@ umask 077
 runtime=.runtime/platform
 install -d -m 0700 "$runtime" "$runtime/secrets"
 
-for name in postgres-password management-db-password mongo-password; do
+for name in postgres-password management-db-password mongo-password records-to-management-token; do
     secret="$runtime/secrets/$name"
     if [ ! -e "$secret" ]; then
         (set -C; openssl rand -hex 32 > "$secret")
@@ -16,6 +16,6 @@ for name in postgres-password management-db-password mongo-password; do
         printf 'Archivo de secreto vacío: %s\n' "$secret" >&2
         exit 1
     fi
-    # The database images read their mounted files after dropping privileges.
+    # Containers read their mounted files after dropping privileges.
     chmod 0444 "$secret"
 done

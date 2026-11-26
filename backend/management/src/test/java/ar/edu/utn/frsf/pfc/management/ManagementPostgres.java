@@ -46,7 +46,12 @@ final class ManagementPostgres implements AutoCloseable {
     }
 
     void startApplication(Class<?>... additionalSources) {
-        application = new SpringApplicationBuilder(ManagementApplication.class).sources(additionalSources).run(
+        startApplication(Map.of(), additionalSources);
+    }
+
+    void startApplication(Map<String, Object> properties, Class<?>... additionalSources) {
+        application = new SpringApplicationBuilder(ManagementApplication.class).sources(additionalSources)
+                .properties(properties).run(
                 "--server.port=0",
                 "--server.address=127.0.0.1",
                 "--spring.datasource.url=" + jdbcUrl(),

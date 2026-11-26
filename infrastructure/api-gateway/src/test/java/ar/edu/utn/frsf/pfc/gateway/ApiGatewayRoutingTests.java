@@ -148,6 +148,7 @@ class ApiGatewayRoutingTests {
         assertNotRouted("POST", "/integration/v1/configuration");
         assertNotRouted("POST", "/integration/v1/configuration-results/extra");
         assertNotRouted("POST", "/integration/v1/records/");
+        assertNotRouted("POST", "/internal/v1/station-authorizations/check");
         assertNotRouted("GET", "/api/unknown");
     }
 

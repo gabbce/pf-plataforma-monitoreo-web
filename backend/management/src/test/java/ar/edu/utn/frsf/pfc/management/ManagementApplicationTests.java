@@ -8,11 +8,13 @@ import java.time.Duration;
 
 import tools.jackson.databind.json.JsonMapper;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,10 +47,45 @@ class ManagementApplicationTests {
         assertThat(get("/actuator/env").statusCode()).isEqualTo(404);
     }
 
+    @Test
+    void stationAuthorizationIsDisabledWithoutServiceToken() throws Exception {
+        assertStationAuthorizationDisabled(port, "a".repeat(64));
+    }
+
+    @Nested
+    @TestPropertySource(properties = "pfc.internal.records-token=" + MalformedServiceToken.VALUE)
+    class MalformedServiceToken {
+        static final String VALUE = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
+
+        @LocalServerPort
+        private int serverPort;
+
+        @Test
+        void stationAuthorizationIsDisabled() throws Exception {
+            assertStationAuthorizationDisabled(serverPort, VALUE);
+        }
+    }
+
+    private static void assertStationAuthorizationDisabled(int port, String token) throws Exception {
+        var response = send(port, "/internal/v1/station-authorizations/check", HttpRequest.newBuilder()
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{")));
+
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("WWW-Authenticate")).contains("Bearer");
+        assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
+        assertThat(response.body()).isEmpty();
+    }
+
     private HttpResponse<String> get(String path) throws Exception {
+        return send(port, path, HttpRequest.newBuilder().GET());
+    }
+
+    private static HttpResponse<String> send(int port, String path, HttpRequest.Builder builder) throws Exception {
         try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
-            var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                    .timeout(Duration.ofSeconds(5)).GET().build();
+            var request = builder.uri(URI.create("http://127.0.0.1:" + port + path))
+                    .timeout(Duration.ofSeconds(5)).build();
             return client.send(request, HttpResponse.BodyHandlers.ofString());
         }
     }

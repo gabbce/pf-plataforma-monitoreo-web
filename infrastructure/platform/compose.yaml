@@ -26,6 +26,8 @@ services:
     secrets:
       - source: management_db_password
         target: spring.datasource.password
+      - source: records_to_management_token
+        target: pfc.internal.records-token
     networks:
       - default
       - management-db
@@ -46,6 +48,11 @@ services:
     environment:
       SERVER_ADDRESS: 0.0.0.0
       SERVER_PORT: "8082"
+      SPRING_CONFIG_IMPORT: configtree:/run/secrets/
+      PFC_INTERNAL_MANAGEMENT_URL: http://management:8081
+    secrets:
+      - source: records_to_management_token
+        target: pfc.internal.records-token
     depends_on:
       mongodb:
         condition: service_healthy
@@ -153,3 +160,5 @@ secrets:
     file: ../../.runtime/platform/secrets/management-db-password
   mongo_password:
     file: ../../.runtime/platform/secrets/mongo-password
+  records_to_management_token:
+    file: ../../.runtime/platform/secrets/records-to-management-token

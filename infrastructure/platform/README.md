@@ -66,10 +66,11 @@ OpenSSL. El resguardo cifrado requiere GnuPG.
 ./infrastructure/platform/prepare-local-config.sh
 ```
 
-El script genera las contraseñas de inicialización de PostgreSQL y MongoDB y
-la contraseña de Gestión si faltan. Conserva los archivos existentes. Los archivos de las contraseñas usan modo `0444` dentro del
-directorio `0700` para que cada imagen de base pueda leer su secreto montado
-en solo lectura después de bajar privilegios.
+El script genera las contraseñas de inicialización de PostgreSQL y MongoDB,
+la contraseña de Gestión y el secreto de Registros para consultar a Gestión si
+faltan. Conserva los archivos existentes. Los secretos usan modo `0444` dentro
+del directorio `0700` para que los procesos puedan leer sus archivos montados en
+solo lectura después de bajar privilegios.
 
 Abrir `http://localhost:8095/` desde el host Docker. Esta entrada HTTP
 corresponde al entorno de desarrollo local. El despliegue de la demo y la
@@ -80,8 +81,8 @@ conexión de Stations externas requieren HTTPS.
 El servicio `provision-management` usa la contraseña administrativa de
 PostgreSQL para preparar el rol `management_app`, propietario del esquema
 `management`, e instalar `btree_gist` en `public`. Verifica la conexión por
-SCRAM, los propietarios y los privilegios. El contenedor de Gestión recibe
-solo su propia contraseña y ejecuta las migraciones Flyway al arrancar.
+SCRAM, los propietarios y los privilegios. El contenedor de Gestión se conecta
+con la contraseña de su propio rol y ejecuta las migraciones Flyway al arrancar.
 
 Para un volumen previo al aprovisionamiento, volver a ejecutar
 `prepare-local-config.sh` y arrancar el central con los archivos y el volumen
@@ -225,8 +226,33 @@ docker compose -f infrastructure/platform/compose.yaml run --no-deps --rm -T \
 
 El comando devuelve `REVOKED` en la primera ejecución y `ALREADY_REVOKED`
 en las siguientes. Gestión audita el alta y la revocación efectivas. En este
-paso se conserva una credencial por par Instancia/productor. La validación
-interna desde Registros se incorpora en P1-03.5.
+paso se conserva una credencial por par Instancia/productor.
+
+## Consulta interna de autorización desde Registros
+
+Registros consulta a Gestión en `POST /internal/v1/station-authorizations/check`
+por la red privada del entorno central. NGINX y Gateway excluyen esa ruta.
+El cliente toma la URL de `PFC_INTERNAL_MANAGEMENT_URL`, configurada como
+`http://management:8081` en Compose local. Registros y Gestión reciben el
+archivo `records-to-management-token` bajo `pfc.internal.records-token`.
+Registros usa ese secreto como credencial `Authorization: Bearer` de servicio.
+
+El cuerpo JSON lleva `instanceId`, `producerId`, `operation` y `stationToken`.
+El cliente solicita `RECORDS_WRITE`. Gestión autentica al servicio antes de
+leer el cuerpo de hasta 4 KiB y comprueba la credencial de Station y su alcance
+en cada pedido.
+
+| Respuesta | Significado |
+| --- | --- |
+| `204` | Registros puede usar la credencial para la operación solicitada. |
+| `401` | Falta la autenticación de Registros o su credencial es inválida. |
+| `403` | La identidad técnica de Station o la operación quedan fuera del alcance autorizado. |
+| `400` | La solicitud autenticada tiene un formato inválido. |
+| `503` | Gestión no pudo consultar la autorización. |
+
+El cliente distingue una denegación de Station de un problema de comunicación o
+configuración. La integración de esta validación con la recepción de mediciones
+corresponde a P1-04.
 
 ## Resguardo de configuración
 

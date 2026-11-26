@@ -1,15 +1,21 @@
 package ar.edu.utn.frsf.pfc.management;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -17,14 +23,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import ar.edu.utn.frsf.pfc.management.station.StationCredentials;
+import ar.edu.utn.frsf.pfc.management.station.StationOperation;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import tools.jackson.databind.json.JsonMapper;
 
 import static ar.edu.utn.frsf.pfc.management.station.StationCredentials.Outcome.ALREADY_EXISTS;
 import static ar.edu.utn.frsf.pfc.management.station.StationCredentials.Outcome.ALREADY_REVOKED;
@@ -43,8 +53,13 @@ class StationCredentialsIT {
     private static final String PRODUCER = "station-a";
     private static final String TOKEN = "0123456789abcdef".repeat(4);
     private static final String OTHER_TOKEN = "fedcba9876543210".repeat(4);
+    private static final String RECORDS_TOKEN = "abaef0123456789c".repeat(4);
     private static final String PROVISION = "provision-station";
     private static final String REVOKE = "revoke-station";
+    private static final JsonMapper JSON = JsonMapper.builder().build();
+
+    @TempDir
+    private static Path secrets;
 
     private static JdbcClient jdbc;
     private static StationCredentials credentials;
@@ -73,7 +88,8 @@ class StationCredentialsIT {
                 VALUES ('SISTEMA', 'v3-preexisting', 'CREATE', 'machine_instance', '000123', CURRENT_TIMESTAMP)
                 """).update();
 
-        POSTGRES.startApplication();
+        Files.writeString(secrets.resolve("pfc.internal.records-token"), RECORDS_TOKEN + "\n");
+        POSTGRES.startApplication(Map.of("spring.config.import", "configtree:" + secrets + "/"));
         jdbc = POSTGRES.jdbc();
         credentials = POSTGRES.bean(StationCredentials.class);
         assertThat(credentialCount()).isZero();
@@ -150,6 +166,26 @@ class StationCredentialsIT {
         assertThat(credentials.authorizes(INSTANCE, PRODUCER, RECORDS_WRITE, bytes(OTHER_TOKEN))).isFalse();
         assertThat(credentials.authorizes(INSTANCE, PRODUCER, RECORDS_WRITE, bytes("invalid"))).isFalse();
         assertThat(credentials.authorizes(INSTANCE, PRODUCER, null, bytes(TOKEN))).isFalse();
+    }
+
+    @Test
+    void checksCurrentStationGrantForRecordsWithTheExactTextualIdentity() throws Exception {
+        credentials.provision(INSTANCE, PRODUCER, Set.of(RECORDS_WRITE, CONFIGURATION_READ), bytes(TOKEN));
+        credentials.provision(INSTANCE, "station-config", Set.of(CONFIGURATION_READ), bytes(OTHER_TOKEN));
+
+        try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 204);
+            assertAuthorization(client, "123", PRODUCER, RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, "000124", PRODUCER, RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, INSTANCE, "Station-A", RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, OTHER_TOKEN, 403);
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, "invalid", 403);
+            assertAuthorization(client, INSTANCE, PRODUCER, CONFIGURATION_READ, TOKEN, 403);
+            assertAuthorization(client, INSTANCE, "station-config", RECORDS_WRITE, OTHER_TOKEN, 403);
+
+            assertThat(credentials.revoke(INSTANCE, PRODUCER)).isEqualTo(REVOKED);
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 403);
+        }
     }
 
     @Test
@@ -248,6 +284,23 @@ class StationCredentialsIT {
         } finally {
             jdbc.sql("ALTER TABLE audit_record DROP CONSTRAINT station_test_block_revoke").update();
         }
+    }
+
+    private static void assertAuthorization(HttpClient client, String instance, String producer, StationOperation operation,
+            String stationToken, int expectedStatus) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + POSTGRES.port()
+                + "/internal/v1/station-authorizations/check"))
+                .header("Authorization", "Bearer " + RECORDS_TOKEN)
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(5))
+                .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(Map.of("instanceId", instance,
+                        "producerId", producer, "operation", operation.name(), "stationToken", stationToken))))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(expectedStatus);
+        assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
+        assertThat(response.body()).isEmpty();
     }
 
     private static <T> List<T> concurrently(Callable<T> call) throws Exception {
