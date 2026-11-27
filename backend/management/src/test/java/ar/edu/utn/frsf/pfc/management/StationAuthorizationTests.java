@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 class StationAuthorizationTests {
 
     static final String RECORDS_TOKEN = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    private static final String CONTACT_PATH = "/internal/v1/station-authorizations/check-and-record-contact";
     private static final String STATION_TOKEN = "fedcba9876543210".repeat(4);
     private static final String BEARER = "Bearer " + RECORDS_TOKEN;
     private static final String JSON_TYPE = "application/json";
@@ -52,6 +53,17 @@ class StationAuthorizationTests {
 
     @LocalServerPort
     private int port;
+
+    @Test
+    void protectsTheContactEndpointAndRejectsInvalidBodiesWithoutAccessingCredentials() throws Exception {
+        var malformed = HttpRequest.BodyPublishers.ofString("{");
+        assertResponse(post(CONTACT_PATH, malformed, JSON_TYPE), 401);
+        assertResponse(post(CONTACT_PATH, malformed, JSON_TYPE, BEARER), 400);
+        var wrongOperation = HttpRequest.BodyPublishers.ofString(
+                VALID_REQUEST.replace("RECORDS_WRITE", "CONFIGURATION_READ"));
+        assertResponse(post(CONTACT_PATH, wrongOperation, JSON_TYPE, BEARER), 403);
+        verifyNoInteractions(credentials);
+    }
 
     @Test
     void authenticatesBeforeConsideringTheMediaTypeOrBody() throws Exception {
@@ -122,8 +134,12 @@ class StationAuthorizationTests {
 
     private HttpResponse<String> post(HttpRequest.BodyPublisher body, String contentType, String... authorizations)
             throws Exception {
-        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
-                + "/internal/v1/station-authorizations/check")).timeout(Duration.ofSeconds(5))
+        return post("/internal/v1/station-authorizations/check", body, contentType, authorizations);
+    }
+
+    private HttpResponse<String> post(String path, HttpRequest.BodyPublisher body, String contentType,
+            String... authorizations) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).timeout(Duration.ofSeconds(5))
                 .header("Content-Type", contentType).POST(body);
         for (var authorization : authorizations) {
             request.header("Authorization", authorization);

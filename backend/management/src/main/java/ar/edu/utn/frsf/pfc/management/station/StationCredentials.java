@@ -78,20 +78,46 @@ public class StationCredentials {
     }
 
     public boolean authorizes(String instanceId, String producerId, StationOperation operation, byte[] token) {
-        if (!isIdentity(instanceId) || !isIdentity(producerId) || operation == null || !StationToken.isValid(token)) {
+        return authorizedCredential(instanceId, producerId, operation, token, false).isPresent();
+    }
+
+    @Transactional
+    public boolean authorizeAndRecordContact(String instanceId, String producerId, byte[] token) {
+        var credentialId = authorizedCredential(instanceId, producerId, StationOperation.RECORDS_WRITE, token, true);
+        if (credentialId.isEmpty()) {
             return false;
         }
+        var updated = jdbc.sql("""
+                UPDATE station_credential
+                SET last_authenticated_contact_at = GREATEST(last_authenticated_contact_at, clock_timestamp())
+                WHERE credential_id = :id
+                """)
+                .param("id", credentialId.get()).update();
+        if (updated != 1) {
+            throw new IllegalStateException("Station contact update failed");
+        }
+        return true;
+    }
+
+    private Optional<Long> authorizedCredential(String instanceId, String producerId, StationOperation operation,
+            byte[] token, boolean lock) {
+        if (!isIdentity(instanceId) || !isIdentity(producerId) || operation == null || !StationToken.isValid(token)) {
+            return Optional.empty();
+        }
         var digest = StationToken.digest(token);
+        // The contact check locks the same row used by revoke until the contact commits.
+        var locking = lock ? " FOR UPDATE OF credential" : "";
         return jdbc.sql("""
-                SELECT credential.token_digest
+                SELECT credential.credential_id, credential.token_digest
                 FROM station_credential credential
                 JOIN station_credential_operation grant_row USING (credential_id)
                 WHERE credential.instance_id = :instance AND credential.producer_id = :producer
                   AND credential.revoked_at IS NULL AND grant_row.operation = :operation
-                """)
+                """ + locking)
                 .param("instance", instanceId).param("producer", producerId).param("operation", operation.name())
-                .query((row, index) -> row.getBytes(1)).optional()
-                .filter(storedDigest -> MessageDigest.isEqual(storedDigest, digest)).isPresent();
+                .query((row, index) -> new StoredVerifier(row.getLong(1), row.getBytes(2))).optional()
+                .filter(stored -> MessageDigest.isEqual(stored.digest(), digest))
+                .map(StoredVerifier::id);
     }
 
     private Optional<StoredCredential> lockCredential(String instanceId, String producerId) {
@@ -147,5 +173,8 @@ public class StationCredentials {
     }
 
     private record StoredCredential(long id, byte[] digest, boolean revoked) {
+    }
+
+    private record StoredVerifier(long id, byte[] digest) {
     }
 }

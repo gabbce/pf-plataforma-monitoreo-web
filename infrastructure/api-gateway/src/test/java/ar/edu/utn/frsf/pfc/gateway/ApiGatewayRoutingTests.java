@@ -56,6 +56,36 @@ class ApiGatewayRoutingTests {
     }
 
     @Test
+    void forwardsTheStationBearerAndRecordsBody() throws Exception {
+        String path = "/integration/v1/records";
+        String authorization = "Bearer " + "a".repeat(64);
+        String payload = "{\"records\":[{\"recordId\":\"example\"}]}";
+        var forwarded = new CompletableFuture<ForwardedStationRequest>();
+        records.createContext(path, exchange -> {
+            try (exchange) {
+                forwarded.complete(new ForwardedStationRequest(exchange.getRequestMethod(),
+                        exchange.getRequestURI().toString(), exchange.getRequestHeaders().getFirst("Authorization"),
+                        new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
+                var response = "{\"results\":[]}".getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+            }
+        });
+        try {
+            var response = send(request(path).header("Authorization", authorization)
+                    .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .build());
+            assertThat(forwarded.get(5, TimeUnit.SECONDS))
+                    .isEqualTo(new ForwardedStationRequest("POST", path, authorization, payload));
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.body()).isEqualTo("{\"results\":[]}");
+        } finally {
+            records.removeContext(path);
+        }
+    }
+
+    @Test
     void routesWebReadsToManagementWithoutChangingTheirPaths() throws Exception {
         assertRouted("GET", "/api/v1/auth/csrf", "management");
         assertRouted("GET", "/api/v1/auth/csrf?purpose=logout", "management");
@@ -149,6 +179,7 @@ class ApiGatewayRoutingTests {
         assertNotRouted("POST", "/integration/v1/configuration-results/extra");
         assertNotRouted("POST", "/integration/v1/records/");
         assertNotRouted("POST", "/internal/v1/station-authorizations/check");
+        assertNotRouted("POST", "/internal/v1/station-authorizations/check-and-record-contact");
         assertNotRouted("POST", "/internal/v1/data-context/resolve");
         assertNotRouted("GET", "/api/unknown");
     }
@@ -218,5 +249,8 @@ class ApiGatewayRoutingTests {
 
     private record ForwardedAccessRequest(String method, String path, String cookie, String csrfToken, String contentType,
             String body) {
+    }
+
+    private record ForwardedStationRequest(String method, String path, String authorization, String body) {
     }
 }

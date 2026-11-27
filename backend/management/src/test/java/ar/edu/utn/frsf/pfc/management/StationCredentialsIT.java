@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.sql.Types;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -56,6 +57,8 @@ class StationCredentialsIT {
     private static final String RECORDS_TOKEN = "abaef0123456789c".repeat(4);
     private static final String PROVISION = "provision-station";
     private static final String REVOKE = "revoke-station";
+    private static final String CHECK_PATH = "/internal/v1/station-authorizations/check";
+    private static final String CONTACT_PATH = "/internal/v1/station-authorizations/check-and-record-contact";
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @TempDir
@@ -88,11 +91,24 @@ class StationCredentialsIT {
                 VALUES ('SISTEMA', 'v3-preexisting', 'CREATE', 'machine_instance', '000123', CURRENT_TIMESTAMP)
                 """).update();
 
+        Flyway.configure().dataSource(dataSource).defaultSchema("management").createSchemas(false)
+                .target("4").load().migrate();
+        var legacyCredential = legacy.sql("""
+                INSERT INTO station_credential (instance_id, producer_id, token_digest)
+                VALUES ('000123', 'station-a', :digest) RETURNING credential_id
+                """)
+                .param("digest", tokenDigest(TOKEN), Types.BINARY).query(Long.class).single();
+        legacy.sql("""
+                INSERT INTO station_credential_operation VALUES (:id, 'RECORDS_WRITE')
+                """).param("id", legacyCredential).update();
+
         Files.writeString(secrets.resolve("pfc.internal.records-token"), RECORDS_TOKEN + "\n");
         POSTGRES.startApplication(Map.of("spring.config.import", "configtree:" + secrets + "/"));
         jdbc = POSTGRES.jdbc();
         credentials = POSTGRES.bean(StationCredentials.class);
-        assertThat(credentialCount()).isZero();
+        assertThat(credentialCount()).isOne();
+        assertThat(credentials.authorizes(INSTANCE, PRODUCER, RECORDS_WRITE, bytes(TOKEN))).isTrue();
+        assertThat(contactAt()).isNull();
         assertThat(auditEntries()).isEmpty();
     }
 
@@ -108,11 +124,11 @@ class StationCredentialsIT {
     }
 
     @Test
-    void v4PreservesV3CatalogSessionsAndAuditWithoutProvisioningStation() {
+    void migrationsPreserveV3CatalogSessionsAndAuditAndV4StationCredentials() {
         var flyway = POSTGRES.bean(Flyway.class);
         flyway.validate();
         assertThat(flyway.info().applied()).extracting(migration -> migration.getVersion().getVersion())
-                .containsExactly("1", "2", "3", "4");
+                .containsExactly("1", "2", "3", "4", "5");
         assertThat(jdbc.sql("SELECT instance_id FROM machine_instance ORDER BY instance_id").query(String.class).list())
                 .containsExactly(INSTANCE, "000124");
         assertThat(jdbc.sql("SELECT logout_csrf_token FROM web_session").query(String.class).single())
@@ -121,6 +137,84 @@ class StationCredentialsIT {
                 .query(String.class).single()).isEqualTo(INSTANCE);
         assertThat(credentialCount()).isZero();
         assertThat(auditEntries()).isEmpty();
+    }
+
+    @Test
+    void recordsOnlyAuthorizedContactsAndPreservesTheLastOneAfterRevocation() throws Exception {
+        credentials.provision(INSTANCE, PRODUCER, Set.of(RECORDS_WRITE), bytes(TOKEN));
+        credentials.provision(INSTANCE, "station-config", Set.of(CONFIGURATION_READ), bytes(OTHER_TOKEN));
+
+        try (var client = HttpClient.newHttpClient()) {
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 204);
+            assertThat(contactAt()).isNull();
+
+            assertAuthorization(client, CONTACT_PATH, "000124", PRODUCER, RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, CONTACT_PATH, "123", PRODUCER, RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, "Station-A", RECORDS_WRITE, TOKEN, 403);
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, RECORDS_WRITE, OTHER_TOKEN, 403);
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, "station-config", RECORDS_WRITE, OTHER_TOKEN, 403);
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, CONFIGURATION_READ, TOKEN, 403);
+            assertThat(contactAt()).isNull();
+
+            var before = dbTime();
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 204);
+            var first = contactAt();
+            assertThat(first).isBetween(before, dbTime());
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 204);
+            var last = contactAt();
+            assertThat(last).isAfterOrEqualTo(first);
+
+            assertThat(credentials.revoke(INSTANCE, PRODUCER)).isEqualTo(REVOKED);
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 403);
+            assertThat(contactAt()).isEqualTo(last);
+        }
+    }
+
+    @Test
+    void serializesContactsAndRevocationAndNeverMovesContactBackwards() throws Exception {
+        credentials.provision(INSTANCE, PRODUCER, Set.of(RECORDS_WRITE), bytes(TOKEN));
+        var contactInFuture = dbTime().plusDays(1);
+        jdbc.sql("UPDATE station_credential SET last_authenticated_contact_at = :contact")
+                .param("contact", contactInFuture).update();
+        assertThat(concurrently(() -> credentials.authorizeAndRecordContact(INSTANCE, PRODUCER, bytes(TOKEN))))
+                .containsExactly(true, true);
+        assertThat(contactAt()).isEqualTo(contactInFuture);
+
+        jdbc.sql("UPDATE station_credential SET last_authenticated_contact_at = NULL").update();
+        var start = new CountDownLatch(1);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var contact = executor.submit(() -> {
+                start.await();
+                return credentials.authorizeAndRecordContact(INSTANCE, PRODUCER, bytes(TOKEN));
+            });
+            var revocation = executor.submit(() -> {
+                start.await();
+                return credentials.revoke(INSTANCE, PRODUCER);
+            });
+            start.countDown();
+            assertThat(revocation.get(15, TimeUnit.SECONDS)).isEqualTo(REVOKED);
+            boolean authorized = contact.get(15, TimeUnit.SECONDS);
+            assertThat(contactAt() != null).isEqualTo(authorized);
+        }
+        var last = contactAt();
+        assertThat(credentials.authorizeAndRecordContact(INSTANCE, PRODUCER, bytes(TOKEN))).isFalse();
+        assertThat(contactAt()).isEqualTo(last);
+    }
+
+    @Test
+    void contactFailureRollsBackAndIsNotAnAuthorizationSuccess() throws Exception {
+        credentials.provision(INSTANCE, PRODUCER, Set.of(RECORDS_WRITE), bytes(TOKEN));
+        jdbc.sql("""
+                ALTER TABLE station_credential ADD CONSTRAINT station_test_block_contact
+                CHECK (last_authenticated_contact_at IS NULL)
+                """).update();
+        try (var client = HttpClient.newHttpClient()) {
+            assertAuthorization(client, CONTACT_PATH, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 503);
+            assertThat(contactAt()).isNull();
+            assertAuthorization(client, INSTANCE, PRODUCER, RECORDS_WRITE, TOKEN, 204);
+        } finally {
+            jdbc.sql("ALTER TABLE station_credential DROP CONSTRAINT station_test_block_contact").update();
+        }
     }
 
     @Test
@@ -288,8 +382,12 @@ class StationCredentialsIT {
 
     private static void assertAuthorization(HttpClient client, String instance, String producer, StationOperation operation,
             String stationToken, int expectedStatus) throws Exception {
-        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + POSTGRES.port()
-                + "/internal/v1/station-authorizations/check"))
+        assertAuthorization(client, CHECK_PATH, instance, producer, operation, stationToken, expectedStatus);
+    }
+
+    private static void assertAuthorization(HttpClient client, String path, String instance, String producer,
+            StationOperation operation, String stationToken, int expectedStatus) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + POSTGRES.port() + path))
                 .header("Authorization", "Bearer " + RECORDS_TOKEN)
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(5))
@@ -301,6 +399,19 @@ class StationCredentialsIT {
         assertThat(response.statusCode()).isEqualTo(expectedStatus);
         assertThat(response.headers().firstValue("Cache-Control")).contains("no-store");
         assertThat(response.body()).isEmpty();
+    }
+
+    private static OffsetDateTime contactAt() {
+        return jdbc.sql("""
+                SELECT last_authenticated_contact_at FROM station_credential WHERE instance_id = :instance
+                    AND producer_id = :producer AND last_authenticated_contact_at IS NOT NULL
+                """)
+                .param("instance", INSTANCE).param("producer", PRODUCER)
+                .query(OffsetDateTime.class).optional().orElse(null);
+    }
+
+    private static OffsetDateTime dbTime() {
+        return jdbc.sql("SELECT clock_timestamp()").query(OffsetDateTime.class).single();
     }
 
     private static <T> List<T> concurrently(Callable<T> call) throws Exception {

@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 class StationAuthorizationClientTests {
 
     private static final String CHECK_PATH = "/internal/v1/station-authorizations/check";
+    private static final String CONTACT_PATH = CHECK_PATH + "-and-record-contact";
     private static final String SERVICE_TOKEN = "1".repeat(64);
     private static final String STATION_TOKEN = "2".repeat(64);
     private static final String INSTANCE_ID = "000041";
@@ -99,6 +100,56 @@ class StationAuthorizationClientTests {
                 .put("producerId", PRODUCER_ID)
                 .put("operation", "RECORDS_WRITE")
                 .put("stationToken", STATION_TOKEN));
+    }
+
+    @Test
+    void usesTheDedicatedContactOperationWithoutFallingBackToThePureCheck(CapturedOutput output) {
+        var request = new AtomicReference<JsonNode>();
+        var bearer = new AtomicReference<String>();
+        var status = new AtomicInteger(204);
+        var pureChecks = new AtomicInteger();
+        management.createContext(CONTACT_PATH, exchange -> {
+            try (exchange) {
+                request.set(JSON.readTree(exchange.getRequestBody()));
+                bearer.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                exchange.sendResponseHeaders(status.get(), -1);
+            }
+        });
+        management.createContext(CHECK_PATH, exchange -> {
+            try (exchange) {
+                pureChecks.incrementAndGet();
+                exchange.sendResponseHeaders(204, -1);
+            }
+        });
+        client = newClient(managementUrl(), SERVICE_TOKEN);
+
+        assertThat(client.checkAndRecordContact(INSTANCE_ID, PRODUCER_ID, STATION_TOKEN)).isEqualTo(ALLOWED);
+        assertThat(bearer.get()).isEqualTo("Bearer " + SERVICE_TOKEN);
+        assertThat(request.get()).isEqualTo(JSON.createObjectNode()
+                .put("instanceId", INSTANCE_ID).put("producerId", PRODUCER_ID)
+                .put("operation", "RECORDS_WRITE").put("stationToken", STATION_TOKEN));
+        status.set(403);
+        assertThat(client.checkAndRecordContact(INSTANCE_ID, PRODUCER_ID, STATION_TOKEN)).isEqualTo(DENIED);
+        status.set(503);
+        assertThat(client.checkAndRecordContact(INSTANCE_ID, PRODUCER_ID, STATION_TOKEN)).isEqualTo(UNAVAILABLE);
+        assertThat(pureChecks).hasValue(0);
+        assertThat(output.getAll()).doesNotContain(SERVICE_TOKEN, STATION_TOKEN);
+    }
+
+    @Test
+    void distinguishesAnOversizedContactScopeWithoutSendingItToManagement() {
+        var calls = new AtomicInteger();
+        management.createContext(CONTACT_PATH, exchange -> {
+            try (exchange) {
+                calls.incrementAndGet();
+                exchange.sendResponseHeaders(400, -1);
+            }
+        });
+        client = newClient(managementUrl(), SERVICE_TOKEN);
+
+        assertThat(client.checkAndRecordContact("á".repeat(2048), PRODUCER_ID, STATION_TOKEN))
+                .isEqualTo(StationAuthorizationClient.Decision.INVALID_SCOPE);
+        assertThat(calls).hasValue(0);
     }
 
     @Test

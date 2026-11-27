@@ -21,6 +21,7 @@ import tools.jackson.databind.json.JsonMapper;
 class StationAuthorizationController {
 
     static final String PATH = "/internal/v1/station-authorizations/check";
+    static final String CONTACT_PATH = "/internal/v1/station-authorizations/check-and-record-contact";
 
     private static final int MAX_BODY_BYTES = 4096;
     private static final Logger LOG = LoggerFactory.getLogger(StationAuthorizationController.class);
@@ -36,6 +37,15 @@ class StationAuthorizationController {
 
     @PostMapping(PATH)
     ResponseEntity<Void> check(HttpServletRequest request) {
+        return check(request, false);
+    }
+
+    @PostMapping(CONTACT_PATH)
+    ResponseEntity<Void> checkAndRecordContact(HttpServletRequest request) {
+        return check(request, true);
+    }
+
+    private ResponseEntity<Void> check(HttpServletRequest request, boolean recordContact) {
         if (request.getContentLengthLong() > MAX_BODY_BYTES) {
             return ResponseEntity.badRequest().build();
         }
@@ -47,12 +57,15 @@ class StationAuthorizationController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         try {
-            if (credentials.authorizes(check.instanceId, check.producerId, check.operation, check.stationToken)) {
+            boolean authorized = recordContact
+                    ? credentials.authorizeAndRecordContact(check.instanceId, check.producerId, check.stationToken)
+                    : credentials.authorizes(check.instanceId, check.producerId, check.operation, check.stationToken);
+            if (authorized) {
                 return ResponseEntity.noContent().build();
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (RuntimeException exception) {
-            LOG.error("Station authorization lookup failed");
+            LOG.error("Station authorization failed");
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
     }

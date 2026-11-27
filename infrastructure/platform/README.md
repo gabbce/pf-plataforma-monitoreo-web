@@ -27,11 +27,9 @@ comparten con MongoDB la red privada `records-db`.
 
 NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
 Gateway. Gateway conserva el método, la ruta y los parámetros. Las rutas web
-de ingreso, listado y detalle de máquinas llegan a Gestión. Gateway reenvía
-`POST /integration/v1/records` a Registros y
-`GET /integration/v1/configuration` y
-`POST /integration/v1/configuration-results` a Gestión. Los servicios de
-destino incorporarán los controladores de esas operaciones en sus cards.
+de ingreso, listado y detalle de máquinas llegan a Gestión. Registros recibe
+DATA en `POST /integration/v1/records`. Gateway reserva para Gestión las rutas
+`GET /integration/v1/configuration` y `POST /integration/v1/configuration-results`.
 Las sondas Actuator de los servicios son internas.
 
 ## Arranque diario
@@ -168,7 +166,8 @@ El contexto previo vence a los 5 minutos y la sesión a los 30 minutos del
 ingreso. Son valores del P1 configurables en el entorno del proceso de Gestión
 mediante `PFC_WEB_CSRF_TTL` y `PFC_WEB_SESSION_TTL`. La API resuelve el
 permiso y la asociación vigentes en cada consulta. El campo
-`lastAuthenticatedContactAt` se devuelve como `null` en este paso.
+`lastAuthenticatedContactAt` refleja el último contacto autenticado de la
+máquina. Se devuelve `null` hasta que Gestión registra el primero.
 
 Para cerrar la sesión, el cliente solicita `GET /api/v1/auth/csrf?purpose=logout`
 con la cookie `PFC_SESSION` activa y envía el token recibido en `X-CSRF-TOKEN`
@@ -254,8 +253,13 @@ en cada pedido.
 | `503` | Gestión no pudo consultar la autorización. |
 
 El cliente distingue una denegación de Station de un problema de comunicación o
-configuración. La integración de esta validación con la recepción de mediciones
-corresponde a P1-04.
+configuración. Para la recepción DATA usa la operación privada
+`POST /internal/v1/station-authorizations/check-and-record-contact`, con el
+mismo cuerpo y tratamiento de estados. Gestión devuelve `204` cuando autoriza
+al productor y confirma el contacto con hora UTC del servidor. Una denegación
+deja ese instante intacto. Registros tampoco procesa el lote si Gestión falla
+al confirmar ese contacto. El máximo por máquina se devuelve en el listado y
+el detalle web.
 
 ## Consulta interna de contexto DATA
 
@@ -302,9 +306,36 @@ Al reconocer un reenvío o detectar un conflicto, verifica la durabilidad del
 original mediante una actualización efectiva de un metadato técnico del mismo
 documento. El contenido contractual, el contexto y la primera recepción
 permanecen intactos. Si falla esa confirmación, el resultado interno
-queda disponible para reintentar. La recepción por contrato y su confirmación
-a Station se integran en el siguiente paso. El límite por operación de MongoDB
+queda disponible para reintentar. El límite por operación de MongoDB
 es de 5 segundos y se configura con `pfc.records.storage-operation-timeout-ms`.
+
+## Recepción de DATA
+
+Station envía un objeto JSON con el arreglo `records` a
+`POST /integration/v1/records` usando su credencial `Authorization: Bearer`.
+En el despliegue, la entrada es HTTPS. La respuesta `200` contiene el arreglo
+`results`, en el orden del envío.
+
+| Estado por registro | Significado |
+| --- | --- |
+| `ACCEPTED` | MongoDB confirmó un original nuevo. |
+| `ALREADY_STORED` | MongoDB confirmó un original existente con el mismo contenido. |
+| `REJECTED` | El elemento tiene un error definitivo y la respuesta incluye el motivo. |
+| `RETRY` | Un impedimento transitorio deja el registro pendiente de reenvío. |
+
+Cada resultado lleva el `recordId` original. Las confirmaciones incluyen
+`storageClass` con `OPERATIONAL` o `REVIEW`. El reenvío mantiene contenido,
+identificador y ocurrencia, y conserva la primera recepción. Un registro con
+tiempo inválido conserva la marca enviada o `null` y queda en `REVIEW`.
+
+La ruta devuelve `400` si el lote no se puede interpretar o contiene un
+elemento sin identificador utilizable, `401` si falta o es inválido el formato
+de la credencial, `403` si no autoriza el ámbito y `503` si Gestión no está
+disponible para autorizar y registrar el contacto. El límite de entrada es
+de 65 536 bytes y 100 registros, configurable con
+`pfc.records.ingestion.max-body-bytes` y `pfc.records.ingestion.max-records`.
+Un lote demasiado grande devuelve `413` y un tipo de contenido distinto de
+JSON devuelve `415`.
 
 ## Resguardo de configuración
 

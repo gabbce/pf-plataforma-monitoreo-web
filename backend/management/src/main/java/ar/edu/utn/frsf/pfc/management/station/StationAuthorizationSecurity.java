@@ -43,6 +43,7 @@ class StationAuthorizationSecurity {
         var paths = PathPatternRequestMatcher.withDefaults();
         var internalRecordsRequests = new OrRequestMatcher(
                 paths.matcher(HttpMethod.POST, StationAuthorizationController.PATH),
+                paths.matcher(HttpMethod.POST, StationAuthorizationController.CONTACT_PATH),
                 paths.matcher(HttpMethod.POST, DataContextController.PATH));
 
         return http.securityMatcher(internalRecordsRequests)

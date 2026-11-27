@@ -16,12 +16,14 @@ import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ar.edu.utn.frsf.pfc.management.catalog.DemoFixtureLoader;
+import ar.edu.utn.frsf.pfc.management.station.StationCredentials;
 import ar.edu.utn.frsf.pfc.management.web.DemoWebAccountLoader;
 
 import org.junit.jupiter.api.AfterAll;
@@ -38,6 +40,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import static ar.edu.utn.frsf.pfc.management.station.StationOperation.RECORDS_WRITE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -75,7 +78,8 @@ class ManagementWebAccessIT {
         jdbc = POSTGRES.jdbc();
         jdbc.sql("""
                 TRUNCATE web_login_context, web_session, web_user, web_role, web_permission,
-                         web_user_role, web_role_permission, web_machine_association, audit_record RESTART IDENTITY
+                         web_user_role, web_role_permission, web_machine_association,
+                         station_credential, station_credential_operation, audit_record RESTART IDENTITY
                 """).update();
         jdbc.sql("DELETE FROM machine_instance WHERE instance_id = '000124'").update();
         NOW.set(START);
@@ -337,6 +341,39 @@ class ManagementWebAccessIT {
         problem(get("/machines", technician), 403, "ACCESS_DENIED");
         jdbc.sql("UPDATE web_user SET active = false WHERE identifier = :id").param("id", OWNER).update();
         problem(get("/machines", owner), 401, "SESSION_REQUIRED");
+    }
+
+    @Test
+    void exposesTheLastStationContactOnlyForAuthorizedMachines() throws Exception {
+        loadAccounts();
+        jdbc.sql("INSERT INTO machine_instance VALUES ('000124', 'embolsadora')").update();
+        var credentials = POSTGRES.bean(StationCredentials.class);
+        credentials.provision("000123", "station-a", Set.of(RECORDS_WRITE), "a".repeat(64)
+                .getBytes(StandardCharsets.US_ASCII));
+        credentials.provision("000123", "station-b", Set.of(RECORDS_WRITE), "b".repeat(64)
+                .getBytes(StandardCharsets.US_ASCII));
+        credentials.provision("000124", "station-c", Set.of(RECORDS_WRITE), "c".repeat(64)
+                .getBytes(StandardCharsets.US_ASCII));
+        jdbc.sql("""
+                UPDATE station_credential SET last_authenticated_contact_at = CASE producer_id
+                    WHEN 'station-a' THEN TIMESTAMPTZ '2026-01-10 19:00:00-03'
+                    WHEN 'station-b' THEN TIMESTAMPTZ '2026-01-11 19:00:00-03'
+                    WHEN 'station-c' THEN TIMESTAMPTZ '2026-01-12 19:00:00-03'
+                END
+                """).update();
+        credentials.revoke("000123", "station-b");
+
+        var owner = authenticated(OWNER, OWNER_PASSWORD);
+        var technician = authenticated(TECHNICIAN, TECHNICIAN_PASSWORD);
+        assertThat(ok(get("/machines", owner)).get("items")).isEqualTo(JSON.readTree("""
+                [{"chassis":"000123","lastAuthenticatedContactAt":"2026-01-11T22:00:00Z"}]
+                """));
+        assertThat(ok(get("/machines/000123", owner)).get("lastAuthenticatedContactAt").stringValue())
+                .isEqualTo("2026-01-11T22:00:00Z");
+        assertThat(ok(get("/machines/000124", technician)).get("lastAuthenticatedContactAt").stringValue())
+                .isEqualTo("2026-01-12T22:00:00Z");
+        problem(get("/machines/000124", owner), 403, "ACCESS_DENIED");
+        problem(get("/machines/000123", null), 401, "SESSION_REQUIRED");
     }
 
     private void loadAccounts() {
