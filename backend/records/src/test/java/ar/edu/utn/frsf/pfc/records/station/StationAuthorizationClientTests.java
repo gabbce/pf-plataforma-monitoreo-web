@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ar.edu.utn.frsf.pfc.records.RecordsApplication;
-import ar.edu.utn.frsf.pfc.records.station.StationAuthorizationClient.InternalProperties;
 import com.sun.net.httpserver.HttpServer;
 
 import org.junit.jupiter.api.AfterEach;
@@ -46,6 +45,7 @@ class StationAuthorizationClientTests {
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     private HttpServer management;
+    private ManagementInternalHttp http;
     private StationAuthorizationClient client;
 
     @BeforeEach
@@ -57,8 +57,8 @@ class StationAuthorizationClientTests {
     @AfterEach
     void closeResources() {
         management.stop(0);
-        if (client != null) {
-            client.close();
+        if (http != null) {
+            http.close();
         }
     }
 
@@ -259,8 +259,8 @@ class StationAuthorizationClientTests {
     }
 
     private StationAuthorizationClient newClient(String url, String token) {
-        var properties = new InternalProperties(url, token);
-        return new StationAuthorizationClient(properties, JSON);
+        http = new ManagementInternalHttp(new ManagementInternalHttp.Properties(url, token));
+        return new StationAuthorizationClient(http, JSON);
     }
 
     private String managementUrl() {

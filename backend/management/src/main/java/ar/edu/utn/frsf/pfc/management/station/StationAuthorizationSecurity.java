@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
 
+import ar.edu.utn.frsf.pfc.management.catalog.DataContextController;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -38,10 +40,12 @@ class StationAuthorizationSecurity {
     @Bean
     @Order(1)
     SecurityFilterChain stationAuthorization(HttpSecurity http, Environment environment) throws Exception {
-        var check = PathPatternRequestMatcher.withDefaults()
-                .matcher(HttpMethod.POST, StationAuthorizationController.PATH);
+        var paths = PathPatternRequestMatcher.withDefaults();
+        var internalRecordsRequests = new OrRequestMatcher(
+                paths.matcher(HttpMethod.POST, StationAuthorizationController.PATH),
+                paths.matcher(HttpMethod.POST, DataContextController.PATH));
 
-        return http.securityMatcher(check)
+        return http.securityMatcher(internalRecordsRequests)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(new RecordsAuthenticationFilter(configuredToken(environment)),

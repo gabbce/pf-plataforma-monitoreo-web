@@ -18,11 +18,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static ar.edu.utn.frsf.pfc.management.station.StationOperation.RECORDS_WRITE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +97,23 @@ class StationAuthorizationTests {
 
         assertResponse(post(VALID_REQUEST, JSON_TYPE, BEARER), 503);
         assertThat(output.getAll()).doesNotContain(RECORDS_TOKEN, STATION_TOKEN);
+    }
+
+    @Test
+    void reportsCatalogDatabaseFailureWithoutExposingDetails(CapturedOutput output) throws Exception {
+        var detail = "private database failure " + RECORDS_TOKEN;
+        when(jdbc.sql(anyString())).thenThrow(new DataAccessResourceFailureException(detail));
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
+                + "/internal/v1/data-context/resolve")).timeout(Duration.ofSeconds(5))
+                .header("Authorization", BEARER).header("Content-Type", JSON_TYPE)
+                .POST(HttpRequest.BodyPublishers.ofString("""
+                        {"instanceId":"000123","definitionId":"engine.rpm","timeValidity":"VALID",
+                         "occurredAt":"2026-01-15T12:00:00Z"}
+                        """)).build();
+        try (var client = HttpClient.newHttpClient()) {
+            assertResponse(client.send(request, HttpResponse.BodyHandlers.ofString()), 503);
+        }
+        assertThat(output.getAll()).doesNotContain(detail, RECORDS_TOKEN);
     }
 
     private HttpResponse<String> post(String body, String contentType, String... authorizations) throws Exception {

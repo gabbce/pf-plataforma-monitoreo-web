@@ -254,6 +254,34 @@ El cliente distingue una denegación de Station de un problema de comunicación 
 configuración. La integración de esta validación con la recepción de mediciones
 corresponde a P1-04.
 
+## Consulta interna de contexto DATA
+
+Registros consulta `POST /internal/v1/data-context/resolve` en Gestión con la
+misma URL y credencial de servicio. La ruta queda fuera de NGINX y Gateway.
+La consulta usa la definición DATA del Tipo asociado al chasis textual.
+
+```json
+{
+  "instanceId": "000123",
+  "definitionId": "engine.rpm",
+  "timeValidity": "VALID",
+  "occurredAt": "2026-01-15T12:00:00Z"
+}
+```
+
+La respuesta `200` incluye `typeId`, `definitionId`, `subsystemId`,
+`valueType`, `unit` y `sourceId`. El subsistema puede ser nulo.
+Con `VALID`, Gestión exige una marca UTC terminada en `Z` y busca la
+fuente vigente en ese instante, con el inicio inclusivo y el fin exclusivo.
+Con `INVALID`, la marca puede ser nula y `sourceId` es nulo. La conservación
+de la marca original y la clasificación `REVIEW` corresponden a Registros
+durante la recepción.
+
+Gestión devuelve `400` si la solicitud es inválida, `401` si falla la
+autenticación interna, `404` si falta el contexto requerido y `503` si
+el catálogo está indisponible. Registros distingue la entrada inválida y
+el contexto inexistente de los fallos de comunicación o de servicio.
+
 ## Resguardo de configuración
 
 Conservar una copia cifrada de la configuración junto al procedimiento de
