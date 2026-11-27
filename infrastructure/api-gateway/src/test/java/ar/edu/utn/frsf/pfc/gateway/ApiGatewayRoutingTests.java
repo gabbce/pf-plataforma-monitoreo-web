@@ -94,6 +94,33 @@ class ApiGatewayRoutingTests {
     }
 
     @Test
+    void forwardsLatestMeasurementsAndSessionCookieToRecords() throws Exception {
+        String path = "/api/v1/machines/000123/measurements/latest";
+        String session = "PFC_SESSION=fixture-session";
+        String payload = "{\"asOf\":\"2026-01-15T12:00:00Z\",\"items\":[]}";
+        var forwarded = new CompletableFuture<String>();
+        records.createContext(path, exchange -> {
+            try (exchange) {
+                forwarded.complete(exchange.getRequestURI() + " " + exchange.getRequestHeaders().getFirst("Cookie"));
+                var response = payload.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+            }
+        });
+        try {
+            var response = send(request(path).header("Cookie", session).GET().build());
+            assertThat(forwarded.get(5, TimeUnit.SECONDS)).isEqualTo(path + " " + session);
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().allValues("Cache-Control")).containsExactly("no-store");
+            assertThat(response.body()).isEqualTo(payload);
+        } finally {
+            records.removeContext(path);
+        }
+    }
+
+    @Test
     void forwardsLoginAndLogoutRequestsAndSessionCookies() throws Exception {
         String path = "/api/v1/auth/session";
         String loginBody = "{\"identifier\":\"reader\",\"password\":\"example\"}";
@@ -181,6 +208,7 @@ class ApiGatewayRoutingTests {
         assertNotRouted("POST", "/internal/v1/station-authorizations/check");
         assertNotRouted("POST", "/internal/v1/station-authorizations/check-and-record-contact");
         assertNotRouted("POST", "/internal/v1/data-context/resolve");
+        assertNotRouted("POST", "/internal/v1/web-machine-access/check");
         assertNotRouted("GET", "/api/unknown");
     }
 
@@ -197,7 +225,8 @@ class ApiGatewayRoutingTests {
         assertNotRouted("PUT", "/api/v1/auth/session");
         assertNotRouted("GET", "/api/v1/machines/");
         assertNotRouted("GET", "/api/v1/machines/000123/");
-        assertNotRouted("GET", "/api/v1/machines/000123/measurements/latest");
+        assertNotRouted("POST", "/api/v1/machines/000123/measurements/latest");
+        assertNotRouted("GET", "/api/v1/machines/000123/measurements/latest/");
         assertNotRouted("GET", "/api/v1/machines/000123/measurements/history");
         assertNotRouted("GET", "/api/v1/actuator/health");
         assertNotRouted("GET", "/integration/v1/auth/csrf");

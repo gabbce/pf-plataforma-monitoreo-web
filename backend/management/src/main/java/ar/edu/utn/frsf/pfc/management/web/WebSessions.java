@@ -133,15 +133,22 @@ class WebSessions implements CsrfTokenRepository {
     }
 
     Optional<ActiveSession> authenticatedSession(HttpServletRequest request) {
-        return WebCookies.digestFrom(request, WebCookies.SESSION)
-                .flatMap(digest -> jdbc.sql("""
-                        SELECT s.user_id, s.logout_csrf_token FROM web_session s JOIN web_user u USING (user_id)
-                        WHERE s.session_digest = :digest AND s.expires_at > :now AND u.active
-                        """)
-                        .param("digest", digest)
-                        .param("now", now())
-                        .query((rows, index) -> new ActiveSession(digest, rows.getLong(1), rows.getString(2)))
-                        .optional());
+        return WebCookies.digestFrom(request, WebCookies.SESSION).flatMap(this::activeSession);
+    }
+
+    Optional<ActiveSession> authenticatedToken(String token) {
+        return WebCookies.validatedDigest(token).flatMap(this::activeSession);
+    }
+
+    private Optional<ActiveSession> activeSession(String digest) {
+        return jdbc.sql("""
+                SELECT s.user_id, s.logout_csrf_token FROM web_session s JOIN web_user u USING (user_id)
+                WHERE s.session_digest = :digest AND s.expires_at > :now AND u.active
+                """)
+                .param("digest", digest)
+                .param("now", now())
+                .query((rows, index) -> new ActiveSession(digest, rows.getLong(1), rows.getString(2)))
+                .optional();
     }
 
     void logout(ActiveSession session) {

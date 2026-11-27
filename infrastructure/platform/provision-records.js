@@ -3,26 +3,32 @@ const fs = require("fs");
 const server = "mongodb://mongodb:27017/?directConnection=true&serverSelectionTimeoutMS=5000";
 const database = "records";
 const collection = "operational_records";
-const indexName = "instance_record_unique";
+const visibilityCollection = "record_visibility";
 const roleName = "records_ingest";
 const userName = "records_app";
 const writeConcern = { w: 1, j: true };
 const actions = ["find", "insert", "update"];
-const privilege = { resource: { db: database, collection }, actions };
+const privileges = [collection, visibilityCollection].map(name => ({
+    resource: { db: database, collection: name }, actions
+}));
 const assignedRole = { role: roleName, db: database };
 
 function secret(filename) {
     return fs.readFileSync("/run/secrets/" + filename, "utf8").replace(/[\r\n]+$/, "");
 }
 
-function matchesRole(role) {
-    if (role.roles.length !== 0 || role.privileges.length !== 1) {
+function matchesRole(role, expected) {
+    if (role.roles.length !== 0 || role.privileges.length !== expected.length) {
         return false;
     }
-    const actual = role.privileges[0];
-    return actual.resource.db === database && actual.resource.collection === collection &&
+    return expected.every(privilege => role.privileges.some(actual =>
+        actual.resource.db === database && actual.resource.collection === privilege.resource.collection &&
         Object.keys(actual.resource).length === 2 &&
-        actual.actions.length === actions.length && actions.every(action => actual.actions.includes(action));
+        actual.actions.length === actions.length && actions.every(action => actual.actions.includes(action))));
+}
+
+function assertSimpleCollection(info) {
+    assert(info.type === "collection" && (!info.options.collation || info.options.collation.locale === "simple"));
 }
 
 let step = "leer secretos";
@@ -38,8 +44,9 @@ try {
 
     step = "verificar el rol de Registros";
     const existingRole = records.getRole(roleName, { showPrivileges: true });
+    const legacyRole = existingRole && matchesRole(existingRole, privileges.slice(0, 1));
     if (existingRole) {
-        assert(matchesRole(existingRole));
+        assert(legacyRole || matchesRole(existingRole, privileges));
     }
 
     step = "verificar la cuenta de Registros";
@@ -51,31 +58,55 @@ try {
         assert(existingConnection.getDB(database).auth(userName, recordsPassword).ok === 1);
     }
 
-    step = "crear o verificar el índice único de originales";
+    step = "crear o verificar los índices de originales";
     const info = records.getCollectionInfos({ name: collection })[0];
     if (info) {
-        assert(info.type === "collection" && (!info.options.collation || info.options.collation.locale === "simple"));
+        assertSimpleCollection(info);
     }
-    const indexKey = { instanceId: 1, recordId: 1 };
+    const indexes = [
+        { key: { instanceId: 1, recordId: 1 }, name: "instance_record_unique", unique: true },
+        {
+            key: { instanceId: 1, storageClass: 1, "original.definitionId": 1,
+                occurredAtSecond: -1, occurredAtNano: -1, recordId: -1 },
+            name: "latest_operational_occurrence"
+        }
+    ];
     const indexResult = records.runCommand({
-        createIndexes: collection,
-        indexes: [{ key: indexKey, name: indexName, unique: true }],
-        writeConcern
+        createIndexes: collection, indexes, writeConcern
     });
     assert(indexResult.ok === 1 && !indexResult.writeConcernError);
-    const originals = records.getCollection(collection);
-    const index = originals.getIndexes().find(candidate => candidate.name === indexName);
-    assert(index && JSON.stringify(index.key) === JSON.stringify(indexKey) && index.unique &&
-        !index.sparse && !index.partialFilterExpression && !index.hidden &&
-        (!index.collation || index.collation.locale === "simple"));
+    const installedIndexes = records.getCollection(collection).getIndexes();
+    for (const expected of indexes) {
+        const actual = installedIndexes.find(candidate => candidate.name === expected.name);
+        assert(actual && JSON.stringify(actual.key) === JSON.stringify(expected.key) &&
+            Boolean(actual.unique) === Boolean(expected.unique) &&
+            !actual.sparse && !actual.partialFilterExpression && !actual.hidden &&
+            (!actual.collation || actual.collation.locale === "simple"));
+    }
+
+    step = "crear o verificar la colección de visibilidad";
+    const visibility = records.getCollectionInfos({ name: visibilityCollection })[0];
+    if (visibility) {
+        assertSimpleCollection(visibility);
+    } else {
+        const result = records.runCommand({ create: visibilityCollection, writeConcern });
+        assert(result.ok === 1 && !result.writeConcernError);
+    }
 
     if (!existingRole) {
         step = "crear el rol de Registros";
         const result = records.runCommand({
-            createRole: roleName, roles: [], privileges: [privilege], writeConcern
+            createRole: roleName, roles: [], privileges, writeConcern
+        });
+        assert(result.ok === 1 && !result.writeConcernError);
+    } else if (legacyRole) {
+        step = "actualizar el rol de Registros para la visibilidad";
+        const result = records.runCommand({
+            grantPrivilegesToRole: roleName, privileges: privileges.slice(1), writeConcern
         });
         assert(result.ok === 1 && !result.writeConcernError);
     }
+    assert(matchesRole(records.getRole(roleName, { showPrivileges: true }), privileges));
     if (!existingUser) {
         step = "crear la cuenta de Registros";
         const result = records.runCommand({
@@ -88,6 +119,7 @@ try {
     const app = new Mongo(server).getDB(database);
     assert(app.auth(userName, recordsPassword).ok === 1);
     app.getCollection(collection).findOne();
+    app.getCollection(visibilityCollection).findOne();
     print("Aprovisionamiento de MongoDB para Registros verificado.");
 } catch (failure) {
     // Keep credentials and command details out of provisioning logs.

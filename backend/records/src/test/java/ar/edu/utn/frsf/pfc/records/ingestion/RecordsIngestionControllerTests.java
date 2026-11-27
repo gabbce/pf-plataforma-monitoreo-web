@@ -11,6 +11,7 @@ import ar.edu.utn.frsf.pfc.records.station.DataContextClient.TimeValidity;
 import ar.edu.utn.frsf.pfc.records.station.StationAuthorizationClient;
 import ar.edu.utn.frsf.pfc.records.station.StationAuthorizationClient.Decision;
 import ar.edu.utn.frsf.pfc.records.storage.DataRecord;
+import ar.edu.utn.frsf.pfc.records.storage.MeasurementReads;
 import ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords;
 import ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords.StorageClass;
 
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -67,6 +69,9 @@ class RecordsIngestionControllerTests {
 
     @MockitoBean
     private StoredDataRecords storage;
+
+    @MockitoBean
+    private MeasurementReads measurements;
 
     @Test
     void requiresASingleValidBearerBeforeReadingTheBody() throws Exception {
@@ -262,6 +267,27 @@ class RecordsIngestionControllerTests {
                 """));
         verify(storage).store(argThat(data -> data.recordId().equals("zero")
                 && data.payload().value().signum() == 0), eq(RPM_CONTEXT));
+    }
+
+    @Test
+    void retriesAnOperationalRecordWhenItsVisibilityCannotBeConfirmed() throws Exception {
+        allowContact();
+        when(storage.recognize(any(DataRecord.class)))
+                .thenReturn(stored(StoredDataRecords.Status.ALREADY_STORED, StorageClass.OPERATIONAL));
+        doThrow(new IllegalStateException("uncertain publication"))
+                .when(measurements).confirmVisible(INSTANCE, "uncertain");
+
+        var response = mvc.perform(request(batch(record("uncertain"))))
+                .andExpect(status().isOk()).andReturn().getResponse();
+
+        assertThat(json.readTree(response.getContentAsString())).isEqualTo(json.readTree("""
+                {"results":[{"recordId":"uncertain","status":"RETRY","reason":"STORAGE_UNAVAILABLE"}]}
+                """));
+        var order = inOrder(measurements, storage);
+        order.verify(measurements).prepare();
+        order.verify(storage).recognize(argThat(data -> data.recordId().equals("uncertain")));
+        order.verify(measurements).confirmVisible(INSTANCE, "uncertain");
+        verifyNoInteractions(catalog);
     }
 
     private void allowContact() {

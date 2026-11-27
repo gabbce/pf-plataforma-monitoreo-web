@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.util.List;
 
 import ar.edu.utn.frsf.pfc.management.catalog.DataContextController;
+import ar.edu.utn.frsf.pfc.management.web.WebMachineAccessController;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ class StationAuthorizationSecurity {
         var internalRecordsRequests = new OrRequestMatcher(
                 paths.matcher(HttpMethod.POST, StationAuthorizationController.PATH),
                 paths.matcher(HttpMethod.POST, StationAuthorizationController.CONTACT_PATH),
+                paths.matcher(HttpMethod.POST, WebMachineAccessController.PATH),
                 paths.matcher(HttpMethod.POST, DataContextController.PATH));
 
         return http.securityMatcher(internalRecordsRequests)

@@ -43,6 +43,10 @@ final class WebCookies {
         }
     }
 
+    static Optional<String> validatedDigest(String token) {
+        return validToken(token) ? Optional.of(digest(token)) : Optional.empty();
+    }
+
     static Optional<String> digestFrom(HttpServletRequest request, String name) {
         var cookies = request.getCookies();
         if (cookies == null) {
@@ -51,13 +55,17 @@ final class WebCookies {
         String token = null;
         for (var cookie : cookies) {
             if (name.equals(cookie.getName())) {
-                if (token != null || !TOKEN_FORMAT.matcher(cookie.getValue()).matches()) {
+                if (token != null || !validToken(cookie.getValue())) {
                     return Optional.empty();
                 }
                 token = cookie.getValue();
             }
         }
         return Optional.ofNullable(token).map(WebCookies::digest);
+    }
+
+    private static boolean validToken(String token) {
+        return token != null && TOKEN_FORMAT.matcher(token).matches();
     }
 
     static void set(HttpServletResponse response, String name, String token) {

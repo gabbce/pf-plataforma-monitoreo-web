@@ -91,6 +91,18 @@ class WebMachineCatalog {
         return new MachineDetail(chassis, rows.getFirst().contactAt(), definitions);
     }
 
+    boolean canReadMachine(long userId, String chassis) {
+        return authorized(SCOPE + """
+                SELECT EXISTS (
+                    SELECT 1 FROM grants
+                    CROSS JOIN machine_instance machine
+                    WHERE machine.instance_id = :chassis AND
+                    """ + CAN_READ_MACHINE + ")",
+                userId)
+                .param("chassis", chassis)
+                .query(Boolean.class).single();
+    }
+
     private static Instant contactAt(ResultSet row) throws SQLException {
         var contact = row.getObject("contact_at", OffsetDateTime.class);
         return contact == null ? null : contact.toInstant();

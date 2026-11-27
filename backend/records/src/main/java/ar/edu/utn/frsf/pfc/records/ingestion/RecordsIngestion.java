@@ -15,6 +15,7 @@ import ar.edu.utn.frsf.pfc.records.station.StationAuthorizationClient;
 import ar.edu.utn.frsf.pfc.records.station.StationAuthorizationClient.Decision;
 import ar.edu.utn.frsf.pfc.records.storage.DataRecord;
 import ar.edu.utn.frsf.pfc.records.storage.DataRecord.Quality;
+import ar.edu.utn.frsf.pfc.records.storage.MeasurementReads;
 import ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords;
 import ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords.StorageClass;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,11 +36,14 @@ class RecordsIngestion {
     private final StationAuthorizationClient authorization;
     private final DataContextClient catalog;
     private final StoredDataRecords storage;
+    private final MeasurementReads measurements;
 
-    RecordsIngestion(StationAuthorizationClient authorization, DataContextClient catalog, StoredDataRecords storage) {
+    RecordsIngestion(StationAuthorizationClient authorization, DataContextClient catalog, StoredDataRecords storage,
+            MeasurementReads measurements) {
         this.authorization = authorization;
         this.catalog = catalog;
         this.storage = storage;
+        this.measurements = measurements;
     }
 
     Receipt receive(List<Submission> batch, String stationToken) {
@@ -93,6 +97,11 @@ class RecordsIngestion {
             return item.rejected(Reason.INVALID_RECORD);
         }
 
+        try {
+            measurements.prepare();
+        } catch (RuntimeException failure) {
+            return item.retry(Reason.STORAGE_UNAVAILABLE);
+        }
         var recognition = storage.recognize(record);
         if (recognition.status() != StoredDataRecords.Status.NOT_FOUND) {
             return stored(item, recognition);
@@ -115,7 +124,14 @@ class RecordsIngestion {
         return stored(item, storage.store(record, context));
     }
 
-    private static Acknowledgment stored(Submission item, StoredDataRecords.Result result) {
+    private Acknowledgment stored(Submission item, StoredDataRecords.Result result) {
+        if (result.storageClass() == StorageClass.OPERATIONAL) {
+            try {
+                measurements.confirmVisible(item.scope().instanceId(), item.recordId());
+            } catch (RuntimeException failure) {
+                return item.retry(Reason.STORAGE_UNAVAILABLE);
+            }
+        }
         return switch (result.status()) {
             case STORED -> new Acknowledgment(item.recordId(), Status.ACCEPTED, result.storageClass(), null);
             case ALREADY_STORED -> new Acknowledgment(item.recordId(), Status.ALREADY_STORED, result.storageClass(), null);

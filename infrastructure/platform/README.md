@@ -28,7 +28,8 @@ comparten con MongoDB la red privada `records-db`.
 NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
 Gateway. Gateway conserva el método, la ruta y los parámetros. Las rutas web
 de ingreso, listado y detalle de máquinas llegan a Gestión. Registros recibe
-DATA en `POST /integration/v1/records`. Gateway reserva para Gestión las rutas
+DATA en `POST /integration/v1/records` y atiende la consulta de últimas lecturas.
+Gateway reserva para Gestión las rutas
 `GET /integration/v1/configuration` y `POST /integration/v1/configuration-results`.
 Las sondas Actuator de los servicios son internas.
 
@@ -291,10 +292,11 @@ el contexto inexistente de los fallos de comunicación o de servicio.
 
 ## Registros y MongoDB
 
-`provision-records` comprueba o prepara la cuenta `records_app` y el índice
-único por `(instanceId, recordId)` en `records.operational_records`. La cuenta
-de la aplicación puede leer, insertar y actualizar esa colección. Conserva
-los secretos al arrancar de nuevo con los volúmenes existentes. El proceso se
+`provision-records` comprueba o prepara la cuenta `records_app`, el índice
+único por `(instanceId, recordId)` y el índice de ocurrencias para las últimas
+lecturas. La cuenta puede leer, insertar y actualizar los originales y los
+metadatos de visibilidad. Conserva los secretos al arrancar de nuevo con los
+volúmenes existentes. El proceso se
 detiene si encuentra un rol, una contraseña o un índice incompatibles.
 
 ```sh
@@ -336,6 +338,25 @@ de 65 536 bytes y 100 registros, configurable con
 `pfc.records.ingestion.max-body-bytes` y `pfc.records.ingestion.max-records`.
 Un lote demasiado grande devuelve `413` y un tipo de contenido distinto de
 JSON devuelve `415`.
+
+## Últimas lecturas autorizadas
+
+`GET /api/v1/machines/{chassis}/measurements/latest` verifica en Gestión
+la sesión web y el acceso vigente a la máquina. Devuelve `401` ante sesión
+ausente o inválida, `403` ante acceso denegado y `500` ante un fallo interno.
+La respuesta exitosa lleva `Cache-Control: no-store` y devuelve un `asOf`
+UTC y las lecturas operativas disponibles.
+
+Registros elige por ocurrencia y desempata por el mayor `recordId`
+lexicográfico. Conserva el contexto histórico y presenta un valor nulo si
+la calidad es distinta de válida. La frescura es `UNKNOWN` mientras falte
+una regla de vigencia aprobada.
+
+El corte se conserva mediante metadatos durables que ordenan las marcas
+de visibilidad y las consultas. Los originales con recepción anterior que
+se confirman después del corte quedan fuera de ese corte. El entorno central
+ejecuta una instancia de Registros que coordina las publicaciones y las
+lecturas sobre MongoDB standalone.
 
 ## Resguardo de configuración
 

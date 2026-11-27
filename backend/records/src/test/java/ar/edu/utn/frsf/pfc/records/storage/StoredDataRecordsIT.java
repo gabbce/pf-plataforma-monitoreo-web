@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +13,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ar.edu.utn.frsf.pfc.records.station.DataContextClient.Context;
 import ar.edu.utn.frsf.pfc.records.station.DataContextClient.TimeValidity;
 import ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords.Result;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoException;
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -45,6 +49,10 @@ import static ar.edu.utn.frsf.pfc.records.storage.StoredDataRecords.StorageClass
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Indexes.ascending;
+import static com.mongodb.client.model.Indexes.compoundIndex;
+import static com.mongodb.client.model.Indexes.descending;
+import static com.mongodb.client.model.Updates.combine;
+import static com.mongodb.client.model.Updates.set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
@@ -60,6 +68,7 @@ class StoredDataRecordsIT {
     private static final Instant LATER_RECEIPT = FIRST_RECEIPT.plusSeconds(15);
     private static final Instant OCCURRENCE = Instant.parse("2026-01-15T12:00:00.123456789Z");
     private static final ConcurrentLinkedQueue<Write> WRITES = new ConcurrentLinkedQueue<>();
+    private static final AtomicReference<PausedInsert> PAUSED_INSERT = new AtomicReference<>();
 
     private static MongoClient client;
     private static MongoCollection<Document> collection;
@@ -78,12 +87,29 @@ class StoredDataRecordsIT {
                         if (List.of("insert", "update").contains(event.getCommandName())) {
                             WRITES.add(new Write(event.getCommandName(), event.getCommand().getDocument("writeConcern")));
                         }
+                        var pause = PAUSED_INSERT.get();
+                        if (pause != null && event.getCommandName().equals("insert")
+                                && event.getCommand().getString("insert").getValue()
+                                        .equals(StoredDataRecords.COLLECTION)) {
+                            pause.started().countDown();
+                            try {
+                                if (!pause.release().await(10, TimeUnit.SECONDS)) {
+                                    throw new AssertionError("Timed out waiting for the visibility cut");
+                                }
+                            } catch (InterruptedException failure) {
+                                Thread.currentThread().interrupt();
+                                throw new AssertionError(failure);
+                            }
+                        }
                     }
                 })
                 .build());
         collection = client.getDatabase("records").getCollection(StoredDataRecords.COLLECTION);
         collection.createIndex(ascending("instanceId", "recordId"),
                 new IndexOptions().unique(true).name("instance_record_unique"));
+        collection.createIndex(compoundIndex(ascending("instanceId", "storageClass", "original.definitionId"),
+                descending("occurredAtSecond", "occurredAtNano", "recordId")));
+        client.getDatabase("records").createCollection(MeasurementReads.STATE_COLLECTION);
     }
 
     @AfterAll
@@ -100,6 +126,7 @@ class StoredDataRecordsIT {
     @BeforeEach
     void prepareStorage() {
         collection.deleteMany(new Document());
+        visibilityState().deleteMany(new Document());
         WRITES.clear();
         storage = storageAt(FIRST_RECEIPT);
     }
@@ -237,6 +264,137 @@ class StoredDataRecordsIT {
                 () -> assertThat(storage.recognize(original).status()).isEqualTo(RETRY)));
     }
 
+    @Test
+    void keepsAnEarlierReceiptOutOfACutWhileTheInsertIsInFlight() throws Exception {
+        var clock = new MutableClock(LATER_RECEIPT);
+        var readings = readings(clock);
+        readings.prepare();
+        var reading = record("000123", "in-flight", "19");
+        var pause = new PausedInsert(new CountDownLatch(1), new CountDownLatch(1));
+        PAUSED_INSERT.set(pause);
+
+        Instant cut;
+        try (var workers = Executors.newVirtualThreadPerTaskExecutor()) {
+            var insertion = workers.submit(() -> {
+                assertThat(storage.store(reading, context("rpm-a"))).isEqualTo(
+                        new Result(STORED, OPERATIONAL, FIRST_RECEIPT));
+                readings.confirmVisible(reading.instanceId(), reading.recordId());
+            });
+            try {
+                assertThat(pause.started().await(5, TimeUnit.SECONDS)).isTrue();
+                var before = readings.latest("000123");
+                cut = before.asOf();
+                assertThat(FIRST_RECEIPT).isBefore(cut);
+                assertThat(before.items()).isEmpty();
+            } finally {
+                PAUSED_INSERT.set(null);
+                pause.release().countDown();
+            }
+            insertion.get(10, TimeUnit.SECONDS);
+        }
+
+        clock.set(LATER_RECEIPT.plusSeconds(1));
+        var restarted = readings(clock);
+        assertThat(restarted.latestAt("000123", cut).items()).isEmpty();
+        assertThat(restarted.latest("000123").items()).singleElement()
+                .satisfies(item -> assertThat(item.measurement().recordId()).isEqualTo("in-flight"));
+    }
+
+    @Test
+    void doesNotIncludeAnOriginalVisibleInMongoBeforeItsDurabilityIsCertain() {
+        var clock = new MutableClock(LATER_RECEIPT);
+        var readings = readings(clock);
+        readings.prepare();
+        var reading = record("000123", "uncertain", "19");
+
+        withOneWriteConcernError("insert",
+                () -> assertThat(storage.store(reading, context("rpm-a")).status()).isEqualTo(RETRY));
+        assertThat(stored("000123", "uncertain")).isNotNull();
+        var old = readings.latest("000123");
+        assertThat(old.items()).isEmpty();
+        assertThat(storage.recognize(reading).status()).isEqualTo(ALREADY_STORED);
+        readings.confirmVisible("000123", reading.recordId());
+
+        clock.set(LATER_RECEIPT.plusSeconds(1));
+        assertThat(readings.latestAt("000123", old.asOf()).items()).isEmpty();
+        assertThat(readings.latest("000123").items()).singleElement()
+                .satisfies(item -> assertThat(item.measurement().receivedAt()).isEqualTo(FIRST_RECEIPT));
+    }
+
+    @Test
+    void recoversAnInterruptedPublicationWithoutMovingAnEarlierCutOrAcceptingAStaleWriter() {
+        var clock = new MutableClock(LATER_RECEIPT);
+        var readings = readings(clock);
+        var old = readings.latest("000123");
+        var reading = record("000123", "pending", "19");
+        assertThat(storage.store(reading, context("rpm-a")).status()).isEqualTo(STORED);
+
+        // A durable reservation can survive the process even before the marker is written.
+        var state = visibilityState();
+        var oldRevision = state.find().first().getObjectId("revision");
+        var original = stored("000123", "pending");
+        var position = LATER_RECEIPT.getEpochSecond() * 1_000_000 + 1;
+        state.updateOne(eq("_id", "latest"), combine(set("floorMicros", position),
+                set("pending", new Document("originalId", original.getObjectId("_id")).append("position", position))));
+        withOneWriteConcernError("update",
+                () -> assertThatThrownBy(() -> readings.latest("000123")).isInstanceOf(MongoException.class));
+
+        clock.set(LATER_RECEIPT.plusSeconds(1));
+        var restarted = readings(clock);
+        assertThat(restarted.latestAt("000123", old.asOf())).isEqualTo(old);
+        assertThat(restarted.latest("000123").items()).singleElement()
+                .satisfies(item -> assertThat(item.measurement().recordId()).isEqualTo("pending"));
+        assertThat(stored("000123", "pending").getLong("visibleAtMicros")).isEqualTo(position);
+        assertThat(state.find().first().get("pending")).isNull();
+        assertThat(state.updateOne(and(eq("_id", "latest"), eq("revision", oldRevision)),
+                set("floorMicros", 0L)).getMatchedCount()).isZero();
+    }
+
+    @Test
+    void returnsOnlyOperationalLatestValuesWithFullOccurrencePrecisionAndStoredContext() {
+        var clock = new MutableClock(LATER_RECEIPT);
+        var readings = readings(clock);
+        var boundary = Instant.parse("2026-01-15T12:00:01Z");
+        var fractional = boundary.plusNanos(1);
+        var rpmSource = context("rpm-historical");
+
+        assertThat(storage.store(measurement("whole-second", "engine.rpm", boundary, BigDecimal.TEN,
+                DataRecord.Quality.VALID, "rpm"), rpmSource).status()).isEqualTo(STORED);
+        assertThat(storage.store(measurement("tie-a", "engine.rpm", fractional, BigDecimal.ONE,
+                DataRecord.Quality.VALID, "rpm"), rpmSource).status()).isEqualTo(STORED);
+        assertThat(storage.store(measurement("tie-z", "engine.rpm", fractional, BigDecimal.ZERO,
+                DataRecord.Quality.VALID, "rpm"), rpmSource).status()).isEqualTo(STORED);
+        assertThat(storageAt(LATER_RECEIPT).store(measurement("late", "engine.rpm", boundary.minusNanos(1),
+                BigDecimal.TEN, DataRecord.Quality.VALID, "rpm"), rpmSource).status()).isEqualTo(STORED);
+        var coolantContext = new Context("embolsadora", "engine.coolant_temperature", "engine", "NUMBER", "°C",
+                "coolant-historical");
+        assertThat(storage.store(measurement("invalid", "engine.coolant_temperature", fractional, BigDecimal.TEN,
+                DataRecord.Quality.INVALID, "°C"), coolantContext).status()).isEqualTo(STORED);
+        assertThat(storage.store(review("review", boundary.plusSeconds(5)), context(null)).status()).isEqualTo(STORED);
+        var original = stored("000123", "tie-z");
+
+        // This collection predates the visibility metadata. Preparation leaves the originals intact.
+        readings.prepare();
+        clock.set(LATER_RECEIPT.plusSeconds(1));
+        assertThat(readings.latest("000123").items()).satisfiesExactly(rpm -> {
+            assertThat(rpm.freshness()).isEqualTo(MeasurementReads.Freshness.UNKNOWN);
+            assertThat(rpm.measurement().recordId()).isEqualTo("tie-z");
+            assertThat(rpm.measurement().value()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(rpm.measurement().occurredAt()).isEqualTo(fractional);
+            assertThat(rpm.measurement().context()).isEqualTo(
+                    new MeasurementReads.HistoricalContext("rpm-historical", "config-a"));
+        }, coolant -> {
+            assertThat(coolant.measurement().value()).isNull();
+            assertThat(coolant.measurement().quality()).isEqualTo(DataRecord.Quality.INVALID);
+        });
+        var migrated = stored("000123", "tie-z");
+        assertThat(migrated.entrySet()).containsAll(original.entrySet());
+        assertThat(stored("000123", "review")).doesNotContainKey("visibleAtMicros");
+        assertThat(readings.latest("000124").items()).isEmpty();
+        assertThat(WRITES).allSatisfy(write -> assertThat(write.concern()).isEqualTo(
+                BsonDocument.parse("{w: 1, j: true}")));
+    }
+
     private static void withOneWriteConcernError(String command, Runnable operation) {
         var error = new Document("writeConcernError",
                 new Document("code", 64).append("errmsg", "Simulated uncertain acknowledgement"));
@@ -258,6 +416,15 @@ class StoredDataRecordsIT {
         return new StoredDataRecords(collection, Clock.fixed(instant, ZoneOffset.UTC), 2000);
     }
 
+    private static MeasurementReads readings(Clock clock) {
+        return new MeasurementReads(client.getDatabase("records"), clock, 2000);
+    }
+
+    private static MongoCollection<Document> visibilityState() {
+        return client.getDatabase("records").getCollection(MeasurementReads.STATE_COLLECTION)
+                .withWriteConcern(WriteConcern.W1.withJournal(true));
+    }
+
     private static Document stored(String instance, String recordId) {
         return collection.find(and(eq("instanceId", instance), eq("recordId", recordId))).first();
     }
@@ -275,6 +442,42 @@ class StoredDataRecordsIT {
     private static DataRecord review(String id, Instant mark) {
         return new DataRecord(1, "000123", id, "station-a", 43L, "engine.rpm", "engine", mark,
                 TimeValidity.INVALID, null, new DataRecord.Payload(null, "rpm", DataRecord.Quality.MISSING));
+    }
+
+    private static DataRecord measurement(String id, String definition, Instant occurrence, BigDecimal number,
+            DataRecord.Quality quality, String unit) {
+        return new DataRecord(1, "000123", id, "station-a", 1L, definition, "engine", occurrence,
+                TimeValidity.VALID, "config-a", new DataRecord.Payload(number, unit, quality));
+    }
+
+    private record PausedInsert(CountDownLatch started, CountDownLatch release) {
+    }
+
+    private static final class MutableClock extends Clock {
+        private final AtomicReference<Instant> instant;
+
+        private MutableClock(Instant initial) {
+            this.instant = new AtomicReference<>(initial);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.fixed(instant(), zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return instant.get();
+        }
+
+        private void set(Instant value) {
+            instant.set(value);
+        }
     }
 
     private record Write(String command, BsonDocument concern) {

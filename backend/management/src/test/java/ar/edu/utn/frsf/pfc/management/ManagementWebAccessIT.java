@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import ar.edu.utn.frsf.pfc.management.catalog.DemoFixtureLoader;
 import ar.edu.utn.frsf.pfc.management.station.StationCredentials;
 import ar.edu.utn.frsf.pfc.management.web.DemoWebAccountLoader;
+import ar.edu.utn.frsf.pfc.management.web.WebMachineAccessController;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,12 +58,14 @@ class ManagementWebAccessIT {
     private static final String TECHNICIAN_PASSWORD = UUID.randomUUID().toString();
     private static final String OWNER_PASSWORD = UUID.randomUUID().toString();
     private static final String UNASSOCIATED_PASSWORD = UUID.randomUUID().toString();
+    private static final String RECORDS_TOKEN = "3".repeat(64);
 
     private JdbcClient jdbc;
 
     @BeforeAll
     static void start() throws Exception {
-        POSTGRES.start(FixedClockConfiguration.class);
+        POSTGRES.startDatabase();
+        POSTGRES.startApplication(Map.of("pfc.internal.records-token", RECORDS_TOKEN), FixedClockConfiguration.class);
         assertThat(POSTGRES.jdbc().sql("SELECT count(*) FROM web_user").query(Integer.class).single()).isZero();
     }
 
@@ -374,6 +377,71 @@ class ManagementWebAccessIT {
                 .isEqualTo("2026-01-12T22:00:00Z");
         problem(get("/machines/000124", owner), 403, "ACCESS_DENIED");
         problem(get("/machines/000123", null), 401, "SESSION_REQUIRED");
+    }
+
+    @Test
+    void internalAuthorizationUsesLiveSessionAndMachinePermissions() throws Exception {
+        loadAccounts();
+        jdbc.sql("INSERT INTO machine_instance VALUES ('000124', 'embolsadora')").update();
+
+        var owner = authenticated(OWNER, OWNER_PASSWORD);
+        var technician = authenticated(TECHNICIAN, TECHNICIAN_PASSWORD);
+        assertMachineDecision("000123", owner, "ALLOWED");
+        assertMachineDecision("000124", technician, "ALLOWED");
+        assertMachineDecision("000124", owner, "ACCESS_DENIED");
+        assertMachineDecision("123", owner, "ACCESS_DENIED");
+        assertMachineDecision("9".repeat(5000), owner, "ACCESS_DENIED");
+        assertMachineDecision("000123", "PFC_SESSION=invalid", "SESSION_REQUIRED");
+
+        jdbc.sql("DELETE FROM web_machine_association WHERE instance_id='000123'").update();
+        assertMachineDecision("000123", owner, "ACCESS_DENIED");
+        jdbc.sql("DELETE FROM web_role_permission WHERE role_id='TECHNICAL_SERVICE'").update();
+        assertMachineDecision("000123", technician, "ACCESS_DENIED");
+
+        var logout = logout(owner, logoutCsrf(owner));
+        assertThat(logout.statusCode()).isEqualTo(204);
+        assertMachineDecision("000123", owner, "SESSION_REQUIRED");
+        NOW.set(START.plus(Duration.ofMinutes(30)));
+        assertMachineDecision("000123", technician, "SESSION_REQUIRED");
+    }
+
+    @Test
+    void internalAuthorizationRequiresTheSeparateServiceBearer() throws Exception {
+        loadAccounts();
+        var owner = authenticated(OWNER, OWNER_PASSWORD);
+        var body = JSON.writeValueAsString(Map.of("chassis", "000123", "sessionToken", sessionToken(owner)));
+        for (var secret : new String[] {null, "4".repeat(64)}) {
+            var rejected = checkMachine(body, secret);
+            assertThat(rejected.statusCode()).isEqualTo(401);
+            assertThat(rejected.headers().firstValue("WWW-Authenticate")).contains("Bearer");
+            assertThat(rejected.body()).doesNotContain(sessionToken(owner));
+        }
+        assertThat(checkMachine("{\"chassis\":123,\"sessionToken\":\"invalid\"}", RECORDS_TOKEN).statusCode())
+                .isEqualTo(400);
+        assertThat(checkMachine(body + "{}", RECORDS_TOKEN).statusCode()).isEqualTo(400);
+        assertThat(checkMachine(" ".repeat(64 * 1024) + body, RECORDS_TOKEN).statusCode()).isEqualTo(400);
+    }
+
+    private static void assertMachineDecision(String chassis, String session, String expected) throws Exception {
+        var body = JSON.writeValueAsString(Map.of("chassis", chassis, "sessionToken", sessionToken(session)));
+        var response = checkMachine(body, RECORDS_TOKEN);
+        assertThat(ok(response)).isEqualTo(JSON.createObjectNode().put("decision", expected));
+        assertThat(response.headers().firstValue("WWW-Authenticate")).isEmpty();
+    }
+
+    private static String sessionToken(String cookie) {
+        return cookie.substring("PFC_SESSION=".length());
+    }
+
+    private static HttpResponse<String> checkMachine(String body, String token) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create(
+                        "http://127.0.0.1:" + POSTGRES.port() + WebMachineAccessController.PATH))
+                .timeout(Duration.ofSeconds(5)).header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token);
+        }
+        return CLIENT.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private void loadAccounts() {
