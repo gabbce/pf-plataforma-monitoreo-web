@@ -3,8 +3,8 @@
 La aplicación web se inicializó con create-vite 9.3.4 y la plantilla oficial
 React con TypeScript. La base incluye acceso, máquinas autorizadas,
 detalle de máquina e histórico en el modo local de escenarios. La
-compilación estándar conecta el acceso y el catálogo de máquinas con Gestión
-mediante el entorno Compose central.
+compilación estándar integra el acceso y el catálogo de Gestión y las
+últimas lecturas de Registros mediante el entorno Compose central.
 Consulta la [guía del frontend](../docs/guia-frontend.md) para recorrer
 las vistas, verificar la base y mantener sus componentes y referencias.
 
@@ -47,7 +47,7 @@ El build compila también Java. En el frontend comprueba los tipos y genera
 los archivos estáticos en `dist/`. `make lint` ejecuta Oxlint y TypeScript.
 `make test` incluye las pruebas del frontend sobre solicitudes a Gestión,
 paginación e intercambio de fechas. Para usar la compilación estándar con
-la API, sigue la [guía del entorno Compose](../docs/guia-frontend.md#acceso-y-catálogo-en-compose).
+la API, sigue la [guía del entorno Compose](../docs/guia-frontend.md#acceso-y-lecturas-en-compose).
 
 ## Organización
 

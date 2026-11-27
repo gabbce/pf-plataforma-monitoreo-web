@@ -5,15 +5,9 @@ import { MachineBreadcrumb } from '@/components/app-layout'
 import { MeasurementChart } from '@/components/measurement-chart'
 import { PeriodSelector, type PeriodMinutes } from '@/components/period-selector'
 import { LoadingStatus, QueryError } from '@/components/query-feedback'
-import { ReadingPanel } from '@/components/reading-panel'
+import { ReadingSummary } from '@/components/reading-summary'
 import { Button } from '@/components/ui/button'
-import {
-  formatMeasurementTime,
-  formatReadingValue,
-  freshnessLabel,
-  qualityLabel,
-  toChartSamples,
-} from '@/readings'
+import { formatMeasurementTime, toChartSamples } from '@/readings'
 import { useQuery } from '@/use-query'
 import {
   loadHistory,
@@ -34,48 +28,6 @@ function subscribeLayout(onChange: () => void) {
 
 function isWideLayout() {
   return window.matchMedia(wideLayout).matches
-}
-
-function ReadingSummary({
-  definition,
-  reading,
-  chassis,
-  asOf,
-}: {
-  definition: MeasurementDefinition
-  reading: LatestReadings['items'][number] | undefined
-  chassis: string
-  asOf: number
-}) {
-  const { name, unit } = definition
-
-  if (!reading) {
-    return (
-      <div className="grid gap-2">
-        <h2 className="text-xl font-semibold">{name}</h2>
-        <p className="text-sm text-muted-foreground">Sin mediciones disponibles.</p>
-      </div>
-    )
-  }
-
-  const { measurement, freshness } = reading
-  const freshnessText = freshnessLabel(freshness)
-  return (
-    <div className="grid gap-2">
-      <h2 className="text-xl font-semibold md:text-2xl">{name}</h2>
-      <div className="flex flex-wrap items-baseline gap-2 tabular-nums">
-        <span className="text-4xl font-bold tracking-tight md:text-5xl">{formatReadingValue(measurement)}</span>
-        <span className="text-xl font-semibold">{unit}</span>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Medición:{' '}
-        <time dateTime={measurement.occurredAt}>{formatMeasurementTime(measurement.occurredAt)}</time>
-      </p>
-      {measurement.quality !== 'VALID' && <p className="text-sm font-medium">{qualityLabel(measurement.quality)}</p>}
-      {freshnessText && <p className="text-sm font-medium">{freshnessText}</p>}
-      <div><ReadingPanel chassis={chassis} name={name} reading={measurement} asOf={asOf} /></div>
-    </div>
-  )
 }
 
 function RecentTrend({

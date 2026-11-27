@@ -1,8 +1,8 @@
 # Guía del frontend
 
 La compilación estándar permite ingresar, consultar las máquinas autorizadas
-y abrir su ficha de catálogo. El modo local de escenarios incluye además
-mediciones e histórico. Los escenarios usan los [ejemplos del contrato web](contratos/web/ejemplos/)
+y ver sus últimas lecturas. El modo local de escenarios incluye también
+tendencias e histórico. Los escenarios usan los [ejemplos del contrato web](contratos/web/ejemplos/)
 y los [criterios aprobados de las interfaces](diseno/interfaces-p1.md).
 El [README del frontend](../frontend/README.md#requisitos) indica las
 versiones de Node.js y npm.
@@ -22,7 +22,7 @@ make build
 La compilación estándar genera `frontend/dist/`. Compose construye y sirve
 esta variante con la API en el mismo origen.
 
-## Acceso y catálogo en Compose
+## Acceso y lecturas en Compose
 
 Ejecuta `make dev` desde la raíz para arrancar el
 [entorno central](../infrastructure/platform/README.md#arranque-diario) y
@@ -31,9 +31,12 @@ cargar la máquina ficticia y las cuentas de prueba. Abre
 aplicación y deriva `/api/v1` a Gateway. Gestión valida la sesión y los
 permisos. El navegador administra las cookies.
 
-La ficha muestra el chasis, el último contacto registrado y las definiciones
-con su unidad. La consulta de últimas mediciones e histórico se integra en
-P1-04 y P1-06.
+La ficha muestra el chasis, el último contacto autenticado y las últimas
+lecturas de RPM y temperatura del refrigerante que Registros devuelve.
+«Ver detalle» muestra la ocurrencia y la recepción en hora de Argentina,
+la antigüedad respecto del corte de consulta y el contexto del registro.
+La ficha indica cuándo faltan lecturas y permite reintentar si la consulta
+falla. El historial conectado a Registros corresponde a P1-06.
 
 ## Recorrido local con escenarios
 
@@ -83,6 +86,11 @@ lockfile si la CLI los modifica. Repite las comprobaciones afectadas
 cuando un componente se comparta entre vistas.
 
 ## Verificar los recorridos
+
+Las pruebas de interfaz automatizadas utilizan Chromium. Instálalo una vez
+con `npm --prefix frontend exec -- playwright install chromium` y ejecuta
+`make test-web`. Las pruebas controlan las respuestas del servidor para
+verificar los estados de autorización, el reintento y la navegación.
 
 Abre Chrome a 360, 768 y 1366 px. Contrasta navegación, jerarquía visual,
 legibilidad y marca con la [guía de Figma](https://www.figma.com/design/u4Pk0hh7Cdh0AoKbfLbXpH?node-id=13-3779)

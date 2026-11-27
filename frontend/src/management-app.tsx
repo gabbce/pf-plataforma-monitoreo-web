@@ -112,7 +112,7 @@ export function ManagementApp() {
   } else if (history) {
     content = <Navigate to={`/maquinas/${encodeURIComponent(state.data.machine.chassis)}`} replace />
   } else {
-    content = <MachineCatalogView machine={state.data.machine} />
+    content = <MachineCatalogView key={chassis} machine={state.data.machine} onExpire={onExpire} />
   }
 
   return (

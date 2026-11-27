@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test, type TestContext } from 'node:test'
 
 import { managementData, signOut } from '../src/management-data.ts'
+import { formatAge, formatMeasurementTime, formatReadingValue, freshnessLabel, qualityLabel } from '../src/readings.ts'
+import type { LatestReadings } from '../src/web-data.ts'
 
 const signal = new AbortController().signal
 
@@ -57,6 +59,78 @@ test('detail preserves the textual chassis, catalog and absence of contact', asy
   assert.deepEqual(requests.map(({ method, url }) => [method, new URL(url).pathname]), [
     ['GET', '/api/v1/machines/000123'],
   ])
+})
+
+test('latest requests the textual chassis and preserves zero, invalid quality and the cutoff', async (context) => {
+  const latest: LatestReadings = {
+    asOf: '2026-01-15T12:11:00Z',
+    items: [
+      {
+        freshness: 'STALE',
+        measurement: {
+          recordId: 'rpm-reading',
+          definitionId: 'engine.rpm',
+          value: 0,
+          unit: 'rpm',
+          quality: 'VALID',
+          occurredAt: '2026-01-15T12:09:00Z',
+          receivedAt: '2026-01-15T12:10:05Z',
+          context: { sourceId: 'rpm-b', appliedConfigVersion: 'cfg-b' },
+        },
+      },
+      {
+        freshness: 'UNKNOWN',
+        measurement: {
+          recordId: 'coolant-reading',
+          definitionId: 'engine.coolant_temperature',
+          value: null,
+          unit: '°C',
+          quality: 'INVALID',
+          occurredAt: '2026-01-15T12:10:00Z',
+          receivedAt: '2026-01-15T12:10:05Z',
+          context: { sourceId: 'coolant-a', appliedConfigVersion: null },
+        },
+      },
+    ],
+  }
+  const partial = { ...latest, items: latest.items.slice(1) }
+  const empty = { ...latest, items: [] }
+  const requests = mockFetch(context, Response.json(latest), Response.json(partial), Response.json(empty))
+
+  const result = await managementData.latest('000123', signal)
+  assert.deepEqual(result, latest)
+  const [rpm, coolant] = result.items
+  assert.equal(formatReadingValue(rpm.measurement), '0')
+  assert.equal(freshnessLabel(rpm.freshness), 'Desactualizada')
+  assert.equal(formatReadingValue(coolant.measurement), '—')
+  assert.equal(qualityLabel(coolant.measurement.quality), 'Inválida')
+  assert.equal(freshnessLabel(coolant.freshness), 'Vigencia desconocida')
+  assert.equal(formatAge(rpm.measurement.occurredAt, Date.parse(result.asOf)), '2 min')
+  assert.match(formatMeasurementTime(rpm.measurement.occurredAt, true), /09:09:00$/)
+  assert.match(formatMeasurementTime(rpm.measurement.receivedAt, true), /09:10:05$/)
+  assert.deepEqual(await managementData.latest('000123', signal), partial)
+  assert.deepEqual(await managementData.latest('000123', signal), empty)
+  assert.equal(requests.length, 3)
+  for (const request of requests) {
+    assert.equal(request.method, 'GET')
+    assert.equal(new URL(request.url).pathname, '/api/v1/machines/000123/measurements/latest')
+    assert.equal(request.headers.get('Accept'), 'application/json, application/problem+json')
+  }
+})
+
+test('latest distinguishes session expiration and denial from retryable errors', async (context) => {
+  const recovered = { asOf: '2026-01-15T12:11:00Z', items: [] }
+  mockFetch(context,
+    new Response(null, { status: 401 }),
+    new Response(null, { status: 403 }),
+    new Response(null, { status: 500 }),
+    Response.json(recovered),
+  )
+
+  await assert.rejects(managementData.latest('000123', signal), { status: 401 })
+  await assert.rejects(managementData.latest('000123', signal), { status: 403 })
+  await assert.rejects(managementData.latest('000123', signal), { status: 500 })
+  assert.deepEqual(await managementData.latest('000123', signal), recovered)
 })
 
 test('sign-out uses the session-specific token and DELETE', async (context) => {

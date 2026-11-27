@@ -5,7 +5,7 @@ WEB_NPM = npm --prefix frontend
 CONTRACT_NPM = npm --prefix tools/web-contract
 CUENTAS ?= infrastructure/platform/cuentas-desarrollo.env
 
-.PHONY: ayuda dev cuentas estado logs parar instalar escenarios build lint test contrato
+.PHONY: ayuda dev cuentas estado logs parar instalar escenarios build lint test test-web contrato
 
 ayuda:
 	@printf '%s\n' \
@@ -19,6 +19,7 @@ ayuda:
 	    'make build                   Compila las aplicaciones Java y el frontend.' \
 	    'make lint                    Ejecuta Oxlint y verifica los tipos de TypeScript.' \
 	    'make test                    Ejecuta las pruebas Java, web y del contrato.' \
+	    'make test-web                Ejecuta las pruebas de interfaz en Chromium.' \
 	    'make contrato                Verifica OpenAPI y sus ejemplos.'
 
 dev:
@@ -59,6 +60,9 @@ lint:
 test: contrato
 	./mvnw verify
 	$(WEB_NPM) test
+
+test-web:
+	$(WEB_NPM) run test:browser
 
 contrato:
 	$(CONTRACT_NPM) run verify

@@ -1,4 +1,11 @@
-import { WebError, type CatalogDataSource, type Machine, type MachineSummary } from './web-data.ts'
+import {
+  WebError,
+  type CatalogDataSource,
+  type LatestReadings,
+  type Machine,
+  type MachineSummary,
+  type WebDataSource,
+} from './web-data.ts'
 
 async function request(
   path: string,
@@ -28,7 +35,7 @@ async function csrfToken(path: string, signal: AbortSignal) {
   return data.token
 }
 
-export const managementData: CatalogDataSource = {
+export const managementData: CatalogDataSource & Pick<WebDataSource, 'latest'> = {
   async signIn(identifier, password, signal) {
     const token = await csrfToken('/auth/csrf', signal)
     await request('/auth/session', signal, 204, {
@@ -48,6 +55,12 @@ export const managementData: CatalogDataSource = {
     const response = await request(`/machines/${encodeURIComponent(chassis)}`, signal)
     const machine: Machine = await response.json()
     return machine
+  },
+
+  async latest(chassis, signal) {
+    const response = await request(`/machines/${encodeURIComponent(chassis)}/measurements/latest`, signal)
+    const latest: LatestReadings = await response.json()
+    return latest
   },
 }
 
