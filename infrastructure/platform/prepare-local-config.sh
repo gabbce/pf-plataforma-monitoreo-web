@@ -7,7 +7,7 @@ umask 077
 runtime=.runtime/platform
 install -d -m 0700 "$runtime" "$runtime/secrets"
 
-for name in postgres-password management-db-password mongo-password records-to-management-token; do
+for name in postgres-password management-db-password mongo-password records-mongo-password records-to-management-token; do
     secret="$runtime/secrets/$name"
     if [ ! -e "$secret" ]; then
         (set -C; openssl rand -hex 32 > "$secret")

@@ -50,12 +50,23 @@ services:
       SERVER_PORT: "8082"
       SPRING_CONFIG_IMPORT: configtree:/run/secrets/
       PFC_INTERNAL_MANAGEMENT_URL: http://management:8081
+      SPRING_MONGODB_HOST: mongodb
+      SPRING_MONGODB_DATABASE: records
+      SPRING_MONGODB_AUTHENTICATION_DATABASE: records
+      SPRING_MONGODB_USERNAME: records_app
     secrets:
       - source: records_to_management_token
         target: pfc.internal.records-token
+      - source: records_mongo_password
+        target: spring.mongodb.password
+    networks:
+      - default
+      - records-db
     depends_on:
       mongodb:
         condition: service_healthy
+      provision-records:
+        condition: service_completed_successfully
 
   gateway:
     <<: *java
@@ -134,6 +145,8 @@ services:
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
+    networks:
+      - records-db
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--host", "mongodb", "--eval", "if (!db.adminCommand({ ping: 1 }).ok) quit(1)"]
       interval: 5s
@@ -141,11 +154,27 @@ services:
       retries: 12
       start_period: 20s
 
+  provision-records:
+    image: mongo:9.0.8-resolute@sha256:1c2e2674ed3adde7edcfe83f7a7a5cbe0204521161d4199ab34e9ec3da2db5c4
+    entrypoint: ["mongosh", "--nodb", "--norc", "--quiet", "--file", "/provision-records.js"]
+    volumes:
+      - ./provision-records.js:/provision-records.js:ro
+    secrets:
+      - mongo_password
+      - records_mongo_password
+    networks:
+      - records-db
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
 networks:
   default:
     internal: true
   ingress: {}
   management-db:
+    internal: true
+  records-db:
     internal: true
 
 volumes:
@@ -160,5 +189,7 @@ secrets:
     file: ../../.runtime/platform/secrets/management-db-password
   mongo_password:
     file: ../../.runtime/platform/secrets/mongo-password
+  records_mongo_password:
+    file: ../../.runtime/platform/secrets/records-mongo-password
   records_to_management_token:
     file: ../../.runtime/platform/secrets/records-to-management-token

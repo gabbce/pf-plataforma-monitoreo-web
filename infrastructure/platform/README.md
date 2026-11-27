@@ -14,14 +14,16 @@ base y de bases de datos se fijan por versión y digest.
 | PostgreSQL 19.0 de Gestión | `postgres:5432` | `postgres_data` |
 | Provisión de PostgreSQL para Gestión | Proceso de ejecución única | |
 | MongoDB 9.0.8 de Registros | `mongodb:27017` | `mongo_data` y `mongo_config` |
+| Provisión de MongoDB para Registros | Proceso de ejecución única | |
 
-Gestión y Registros esperan que su base esté disponible. Gestión también espera
-que termine la provisión de su rol y esquema. NGINX es el único servicio con un puerto publicado. Escucha en el host
+Gestión y Registros esperan que su base esté disponible y que termine su
+aprovisionamiento. NGINX es el único servicio con un puerto publicado. Escucha en el host
 en `127.0.0.1:8095` y se conecta tanto a la red de entrada como a la privada.
 El [auxiliar](../auxiliary/README.md) conserva su propia red y usa la publicación
 de NGINX a través del host en Docker Desktop. El resto del central solo usa su
 red interna. Solo Gestión y su proceso de provisión comparten con PostgreSQL
-la red privada `management-db`.
+la red privada `management-db`. Solo Registros y su proceso de provisión
+comparten con MongoDB la red privada `records-db`.
 
 NGINX sirve el frontend y reenvía `/api` y `/integration` a Spring Cloud
 Gateway. Gateway conserva el método, la ruta y los parámetros. Las rutas web
@@ -67,8 +69,9 @@ OpenSSL. El resguardo cifrado requiere GnuPG.
 ```
 
 El script genera las contraseñas de inicialización de PostgreSQL y MongoDB,
-la contraseña de Gestión y el secreto de Registros para consultar a Gestión si
-faltan. Conserva los archivos existentes. Los secretos usan modo `0444` dentro
+las contraseñas de base de Gestión y Registros y el secreto de servicio para
+que Registros consulte a Gestión si faltan. Conserva los archivos existentes.
+Los secretos usan modo `0444` dentro
 del directorio `0700` para que los procesos puedan leer sus archivos montados en
 solo lectura después de bajar privilegios.
 
@@ -281,6 +284,27 @@ Gestión devuelve `400` si la solicitud es inválida, `401` si falla la
 autenticación interna, `404` si falta el contexto requerido y `503` si
 el catálogo está indisponible. Registros distingue la entrada inválida y
 el contexto inexistente de los fallos de comunicación o de servicio.
+
+## Registros y MongoDB
+
+`provision-records` comprueba o prepara la cuenta `records_app` y el índice
+único por `(instanceId, recordId)` en `records.operational_records`. La cuenta
+de la aplicación puede leer, insertar y actualizar esa colección. Conserva
+los secretos al arrancar de nuevo con los volúmenes existentes. El proceso se
+detiene si encuentra un rol, una contraseña o un índice incompatibles.
+
+```sh
+docker compose -f infrastructure/platform/compose.yaml logs provision-records
+```
+
+Registros confirma la inserción con escritura en el journal de MongoDB.
+Al reconocer un reenvío o detectar un conflicto, verifica la durabilidad del
+original mediante una actualización efectiva de un metadato técnico del mismo
+documento. El contenido contractual, el contexto y la primera recepción
+permanecen intactos. Si falla esa confirmación, el resultado interno
+queda disponible para reintentar. La recepción por contrato y su confirmación
+a Station se integran en el siguiente paso. El límite por operación de MongoDB
+es de 5 segundos y se configura con `pfc.records.storage-operation-timeout-ms`.
 
 ## Resguardo de configuración
 
